@@ -19,7 +19,6 @@ var KEY = Object.freeze({
 
 
 var player;
-var input;
 
 
 class Input {
@@ -32,6 +31,7 @@ class Input {
         this.pressed_keys.clear();
         this.released_keys.clear();
     }
+    
     key_down_event(evnt) {
         this.pressed_keys.set(evnt.keyCode,true);
         this.held_keys.set(evnt.keyCode,true);
@@ -40,16 +40,30 @@ class Input {
         this.released_keys.set(evnt.keyCode,true);
         this.held_keys.set(evnt.keyCode,false);
     }
+
+    // would like to make the polling a class method
+    /*
+    key_down_event(evnt) {
+        $(document).keydown(function(evnt) {
+            this.pressed_keys.set(evnt.keyCode,true);
+            this.held_keys.set(evnt.keyCode,true);
+            console.log('keydown');
+        });
+    }
+    */
+
     was_key_pressed(key) {
-        return pressed_keys.has(key);
+        return this.pressed_keys.has(key);
     }
     was_key_released(key) {
-        return released_keys.has(key);
+        return this.released_keys.has(key);
     }
     is_key_held(key) {
-        return held_keys.has(key);
+        return this.held_keys.has(key);
     }
 }
+
+var input = new Input();
 
 
 
@@ -70,9 +84,14 @@ class Player {
         ctx.fillRect(
             this.x,this.y,
             this.width,this.height);
-        while(event.)
-
-
+        if (input.was_key_pressed(KEY.UP))
+            this.move_up(1);
+        if (input.was_key_pressed(KEY.DOWN))
+            this.move_down(1);
+        if (input.was_key_pressed(KEY.LEFT))
+            this.move_left(1);
+        if (input.was_key_pressed(KEY.RIGHT))
+            this.move_right(1);
         
     }
     move_up(delta) {
@@ -87,9 +106,10 @@ class Player {
     move_right(delta) {
         this.x += delta;
     }
-    coordinates() {
-        console.log(this.x+' '+this.y);
-    }
+    //coordinates() {
+    //    console.log(this.x+' '+this.y);
+    //}
+    /*
     controller(e) {
         if (e.keyCode == KEY.UP)
             player.move_up(1);
@@ -101,12 +121,17 @@ class Player {
             player.move_left(1);
         player.coordinates();
     }
+    */
 }
 
 
-$(document).keydown(function(e){
-    player.controller(e);
+$(document).keydown(function(evnt) {
+    input.key_down_event(evnt);
 });
+
+$(document).keyup(function(evnt) {
+    input.key_up_event(evnt);
+})
 
 
 var GameCore = {
@@ -129,15 +154,15 @@ var GameCore = {
 
 
 function updateGameArea() {
-    GameCore.clear();
     input.begin_new_frame();
+    GameCore.clear();
     player.update();
 }
 
 
 function run() {
     player = new Player(30,30,10,120,'red');
-    input = new Input();
+    //input = new Input();
     GameCore.start();
 }
 
