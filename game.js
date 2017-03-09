@@ -18,89 +18,47 @@ var KEY = Object.freeze({
 });
 
 
-function Player(x,y) {
-    this.x = x;
-    this.y = y;
-    this.controller = $(document).keydown(function(e){
-        if (e.keyCode == KEY.UP) {
-            console.log('up');
-        }
-        if (e.keyCode == KEY.DOWN) {
-            console.log('down');
-        }
-        if (e.keyCode == KEY.RIGHT) {
-            console.log('right');
-        }
-        if (e.keyCode == KEY.LEFT) {
-            console.log('left');
-        }
-    });
+class Player {
+    constructor(x,y) {
+        this.x = x;
+        this.y = y;
+    }
+    move_up(delta) {
+        this.y -= delta;
+    }
+    move_down(delta) {
+        this.y += delta;
+    }
+    move_left(delta) {
+        this.x -= delta;
+    }
+    move_right(delta) {
+        this.x += delta;
+    }
+    coordinates() {
+        console.log(this.x+' '+this.y);
+    }
+    controller(e) {
+        if (e.keyCode == KEY.UP)
+            player.move_up(1);
+        if (e.keyCode == KEY.DOWN)
+            player.move_down(1);
+        if (e.keyCode == KEY.RIGHT)
+            player.move_right(1);
+        if (e.keyCode == KEY.LEFT)
+            player.move_left(1);
+        player.coordinates();
+    }
 }
 
-/*
-Player.controller = $(document).keydown(function(e){
-    if (e.keyCode == KEY.UP) {
-        console.log('up');
-    }
-    if (e.keyCode == KEY.DOWN) {
-        console.log('down');
-    }
-    if (e.keyCode == KEY.RIGHT) {
-        console.log('right');
-    }
-    if (e.keyCode == KEY.LEFT) {
-        console.log('left');
-    }
+
+function begin() {
+    return new Player(0,0);
+}
+var player = begin();
+
+
+$(document).keydown(function(e){
+    player.controller(e);
 });
-*/
-
-
-(function(){
-    var player = new Player(0,0);
-})
-
-
-/*
-
-function Player(x,y) {
-    this.pos_x = x;
-    this.pos_y = y;
-
-    this.move_up = function () {
-        console.log('up');
-    }
-    this.move_down = function() {
-        console.log('down');
-    }
-    this.move_left = function() {
-        console.log('left');
-    }
-    this.move_right = function() {
-        console.log('right');
-    }
-
-    this.controller = $(document).keydown(function(e){
-        if (e.keyCode == KEY.UP) {
-            this.move_up();
-        }
-        if (e.keyCode == KEY.DOWN) {
-            this.move_down();
-        }
-        if (e.keyCode == KEY.RIGHT) {
-            this.move_right();
-        }
-        if (e.keyCode == KEY.LEFT) {
-            this.move_left();
-        }
-    });
-    
-}
-
-
-(function(){
-    var player = new Player(0,0);
-})();
-
-*/
-
 
