@@ -18,6 +18,10 @@ var KEY = Object.freeze({
 });
 
 
+var player;
+var input;
+
+
 class Input {
     constructor() {
         this.held_keys = new Map();
@@ -48,17 +52,28 @@ class Input {
 }
 
 
+
 class Player {
     constructor(w,h,x,y,sprite) {
         this.width = w;
         this.height = h;
         this.x = x;
         this.y = y;
+        this.sprite = sprite;
+    }
+
+    // update method for this
+    // have sprite, not color
+    update() {
         var ctx = GameCore.context;
-        // update method for this
-        // have sprite, not color
-        ctx.fillStyle = sprite;
-        ctx.fillRect(this.x,this.y,this.width,this.height);
+        ctx.fillStyle = this.sprite;
+        ctx.fillRect(
+            this.x,this.y,
+            this.width,this.height);
+        while(event.)
+
+
+        
     }
     move_up(delta) {
         this.y -= delta;
@@ -88,8 +103,6 @@ class Player {
     }
 }
 
-var player;
-
 
 $(document).keydown(function(e){
     player.controller(e);
@@ -105,13 +118,102 @@ var GameCore = {
         document.body.insertBefore(
             this.canvas,
             document.body.childNodes[0]);
+        this.interval = setInterval(updateGameArea,20);
+    },
+    clear: function() {
+        this.context.clearRect(0,0,
+            this.canvas.width,
+            this.canvas.height);
     }
 }
 
 
-function run() {
-    GameCore.start();
-    player = new Player(30,30,10,120,'red');
+function updateGameArea() {
+    GameCore.clear();
+    input.begin_new_frame();
+    player.update();
 }
 
+
+function run() {
+    player = new Player(30,30,10,120,'red');
+    input = new Input();
+    GameCore.start();
+}
+
+
+
+
+
+/*
+var canvas = document.getElementById("canvas"),
+    ctx = canvas.getContext("2d");
+
+canvas.width = canvas.height = 300;
+
+var x = 150,
+    y = 150,
+    velY = 0,
+    velX = 0,
+    speed = 2,
+    friction = 0.98,
+    keys = [];
+
+function update() {
+    requestAnimationFrame(update);
+    
+    if (keys[38]) {
+        if (velY > -speed) {
+            velY--;
+        }
+    }
+    
+    if (keys[40]) {
+        if (velY < speed) {
+            velY++;
+        }
+    }
+    if (keys[39]) {
+        if (velX < speed) {
+            velX++;
+        }
+    }
+    if (keys[37]) {
+        if (velX > -speed) {
+            velX--;
+        }
+    }
+
+    velY *= friction;
+    y += velY;
+    velX *= friction;
+    x += velX;
+
+    if (x >= 295) {
+        x = 295;
+    } else if (x <= 5) {
+        x = 5;
+    }
+
+    if (y > 295) {
+        y = 295;
+    } else if (y <= 5) {
+        y = 5;
+    }
+
+    ctx.clearRect(0, 0, 300, 300);
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+update();
+
+document.body.addEventListener("keydown", function (e) {
+    keys[e.keyCode] = true;
+});
+document.body.addEventListener("keyup", function (e) {
+    keys[e.keyCode] = false;
+});
+ */
 
