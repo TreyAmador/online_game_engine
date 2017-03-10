@@ -18,8 +18,7 @@ var KEY = Object.freeze({
 });
 
 
-var player;
-
+//var player = new Player();
 
 class Input {
     constructor() {
@@ -76,24 +75,6 @@ class Player {
         this.sprite = sprite;
     }
 
-    // update method for this
-    // have sprite, not color
-    update() {
-        var ctx = GameCore.context;
-        ctx.fillStyle = this.sprite;
-        ctx.fillRect(
-            this.x,this.y,
-            this.width,this.height);
-        if (input.was_key_pressed(KEY.UP))
-            this.move_up(1);
-        if (input.was_key_pressed(KEY.DOWN))
-            this.move_down(1);
-        if (input.was_key_pressed(KEY.LEFT))
-            this.move_left(1);
-        if (input.was_key_pressed(KEY.RIGHT))
-            this.move_right(1);
-        
-    }
     move_up(delta) {
         this.y -= delta;
     }
@@ -106,23 +87,28 @@ class Player {
     move_right(delta) {
         this.x += delta;
     }
-    //coordinates() {
-    //    console.log(this.x+' '+this.y);
-    //}
-    /*
-    controller(e) {
-        if (e.keyCode == KEY.UP)
-            player.move_up(1);
-        if (e.keyCode == KEY.DOWN)
-            player.move_down(1);
-        if (e.keyCode == KEY.RIGHT)
-            player.move_right(1);
-        if (e.keyCode == KEY.LEFT)
-            player.move_left(1);
-        player.coordinates();
+
+    // update method for this
+    // have sprite, not color
+    update() {
+        var ctx = GameCore.context;
+        ctx.fillStyle = this.sprite;
+        ctx.fillRect(
+            this.x,this.y,
+            this.width,this.height);
+        if (input.was_key_pressed(KEY.UP) || input.is_key_held(KEY.UP))
+            this.move_up(1);
+        if (input.was_key_pressed(KEY.DOWN) || input.is_key_held(KEY.DOWN))
+            this.move_down(1);
+        if (input.was_key_pressed(KEY.LEFT) || input.is_key_held(KEY.LEFT))
+            this.move_left(1);
+        if (input.was_key_pressed(KEY.RIGHT) || input.is_key_held(KEY.RIGHT))
+            this.move_right(1);
     }
-    */
 }
+
+
+var player = new Player(30,30,10,120,'red');
 
 
 $(document).keydown(function(evnt) {
@@ -157,11 +143,12 @@ function updateGameArea() {
     input.begin_new_frame();
     GameCore.clear();
     player.update();
+    
 }
 
 
 function run() {
-    player = new Player(30,30,10,120,'red');
+    //player = new Player(30,30,10,120,'red');
     //input = new Input();
     GameCore.start();
 }
