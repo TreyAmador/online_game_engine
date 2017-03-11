@@ -14,56 +14,56 @@ var KEY = Object.freeze({
     UP: 38,
     DOWN: 40,
     RIGHT: 39,
-    LEFT: 37
+    LEFT: 37,
+    JUMP: 32
 });
 
+
+const MSEC_PER_SEC = 1000;
+const FRAMES_PER_SEC = 50;
+const FRAME_TIME = MSEC_PER_SEC / FRAMES_PER_SEC;
+
+const WALK_ACCEL = 0.002;
+const FRICTION = 0.85;
+
+const MAX_VEL_X = 0.5;
+
+const GRAVITY = 0.001;
+const JUMP_VEL = 0.5;
+
+var player,
+    input;
 
 //var player = new Player();
 
 class Input {
     constructor() {
-        this.held_keys = new Map();
-        this.pressed_keys = new Map();
-        this.released_keys = new Map();
+        this.held_keys = [];
+        this.pressed_keys = [];
+        this.released_keys = [];
     }
     begin_new_frame() {
-        this.pressed_keys.clear();
-        this.released_keys.clear();
+        this.pressed_keys = [];
+        this.released_keys = [];
     }
-    
     key_down_event(evnt) {
-        this.pressed_keys.set(evnt.keyCode,true);
-        this.held_keys.set(evnt.keyCode,true);
+        this.pressed_keys[evnt.keyCode] = true;
+        this.held_keys[evnt.keyCode] = true;
     }
     key_up_event(evnt) {
-        this.released_keys.set(evnt.keyCode,true);
-        this.held_keys.set(evnt.keyCode,false);
+        this.released_keys[evnt.keyCode] = true;
+        this.held_keys[evnt.keyCode] = false;
     }
-
-    // would like to make the polling a class method
-    /*
-    key_down_event(evnt) {
-        $(document).keydown(function(evnt) {
-            this.pressed_keys.set(evnt.keyCode,true);
-            this.held_keys.set(evnt.keyCode,true);
-            console.log('keydown');
-        });
-    }
-    */
-
     was_key_pressed(key) {
-        return this.pressed_keys.has(key);
+        return this.pressed_keys[key];
     }
     was_key_released(key) {
-        return this.released_keys.has(key);
+        return this.released_keys[key];
     }
     is_key_held(key) {
-        return this.held_keys.has(key);
+        return this.held_keys[key];
     }
 }
-
-var input = new Input();
-
 
 
 class Player {
@@ -73,19 +73,32 @@ class Player {
         this.x = x;
         this.y = y;
         this.sprite = sprite;
+        this.vel_x = 0.0;
+        this.vel_y = 0.0;
+        this.accel_x = 0.0;
+        this.accel_y = 0.0;
+        this.on_ground = false;
     }
 
-    move_up(delta) {
-        this.y -= delta;
+    move_up() {
+        //this.y -= delta;
     }
-    move_down(delta) {
-        this.y += delta;
+    move_down() {
+        //this.y += delta;
     }
-    move_left(delta) {
-        this.x -= delta;
+    move_left() {
+        //this.x -= 1;
+        this.accel_x = -WALK_ACCEL;
     }
-    move_right(delta) {
-        this.x += delta;
+    move_right() {
+        //this.x += 1;
+        this.accel_x = WALK_ACCEL;
+    }
+    stop_moving() {
+        this.accel_x = 0.0;
+    }
+    jump() {
+        this.vel_y = -JUMP_VEL;
     }
 
     // update method for this
@@ -96,19 +109,44 @@ class Player {
         ctx.fillRect(
             this.x,this.y,
             this.width,this.height);
-        if (input.was_key_pressed(KEY.UP) || input.is_key_held(KEY.UP))
-            this.move_up(1);
-        if (input.was_key_pressed(KEY.DOWN) || input.is_key_held(KEY.DOWN))
-            this.move_down(1);
-        if (input.was_key_pressed(KEY.LEFT) || input.is_key_held(KEY.LEFT))
-            this.move_left(1);
-        if (input.was_key_pressed(KEY.RIGHT) || input.is_key_held(KEY.RIGHT))
-            this.move_right(1);
+        
+        if (input.is_key_held(KEY.LEFT) && 
+            input.is_key_held(KEY.RIGHT))
+            this.stop_moving();
+        else if (input.is_key_held(KEY.LEFT))
+            this.move_left();
+        else if (input.is_key_held(KEY.RIGHT))
+            this.move_right();
+        else
+            this.stop_moving();
+
+        if (input.was_key_pressed(KEY.JUMP)) {
+            if (this.on_ground) {
+                this.jump();
+                this.on_ground = false;
+            }
+        }
+        
+        this.vel_x += this.accel_x*FRAME_TIME;
+        if (Math.abs(this.vel_x) > MAX_VEL_X)
+            this.vel_x = Math.sign(this.vel_x)*MAX_VEL_X;
+        this.x += this.vel_x*FRAME_TIME;
+        this.vel_x *= FRICTION;
+        this.vel_y += GRAVITY*FRAME_TIME;
+        this.y += this.vel_y*FRAME_TIME;
+        
+        // fix this hack!
+        if (this.y > 200) {
+            this.y = 200;
+            this.vel_y = 0;
+            this.on_ground = true;
+        }
+
     }
 }
 
 
-var player = new Player(30,30,10,120,'red');
+//var player = new Player(30,30,10,120,'red');
 
 
 $(document).keydown(function(evnt) {
@@ -129,7 +167,8 @@ var GameCore = {
         document.body.insertBefore(
             this.canvas,
             document.body.childNodes[0]);
-        this.interval = setInterval(updateGameArea,20);
+        this.interval = setInterval(
+                updateGameArea,FRAME_TIME);
     },
     clear: function() {
         this.context.clearRect(0,0,
@@ -140,16 +179,17 @@ var GameCore = {
 
 
 function updateGameArea() {
-    input.begin_new_frame();
+    
     GameCore.clear();
     player.update();
+    input.begin_new_frame();
     
 }
 
 
 function run() {
-    //player = new Player(30,30,10,120,'red');
-    //input = new Input();
+    player = new Player(30,30,10,120,'red');
+    input = new Input();
     GameCore.start();
 }
 
