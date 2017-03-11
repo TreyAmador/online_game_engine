@@ -2,6 +2,12 @@
     Game engine in javascript
 */
 
+//import World from './world.js';
+
+//var World = require('world');
+
+//var world = new World();
+
 
 var STATE = Object.freeze({
     PLAY: 1,
@@ -32,9 +38,16 @@ const GRAVITY = 0.001;
 const JUMP_VEL = 0.5;
 
 var player,
-    input;
+    input,
+    world;
 
-//var player = new Player();
+//var World = require('world');
+
+
+
+
+var blocks = []
+
 
 class Input {
     constructor() {
@@ -66,6 +79,7 @@ class Input {
 }
 
 
+
 class Player {
     constructor(w,h,x,y,sprite) {
         this.width = w;
@@ -78,13 +92,6 @@ class Player {
         this.accel_x = 0.0;
         this.accel_y = 0.0;
         this.on_ground = false;
-    }
-
-    move_up() {
-        //this.y -= delta;
-    }
-    move_down() {
-        //this.y += delta;
     }
     move_left() {
         //this.x -= 1;
@@ -100,16 +107,12 @@ class Player {
     jump() {
         this.vel_y = -JUMP_VEL;
     }
-
-    // update method for this
-    // have sprite, not color
     update() {
         var ctx = GameCore.context;
         ctx.fillStyle = this.sprite;
         ctx.fillRect(
             this.x,this.y,
             this.width,this.height);
-        
         if (input.is_key_held(KEY.LEFT) && 
             input.is_key_held(KEY.RIGHT))
             this.stop_moving();
@@ -119,14 +122,12 @@ class Player {
             this.move_right();
         else
             this.stop_moving();
-
         if (input.was_key_pressed(KEY.JUMP)) {
             if (this.on_ground) {
                 this.jump();
                 this.on_ground = false;
             }
         }
-        
         this.vel_x += this.accel_x*FRAME_TIME;
         if (Math.abs(this.vel_x) > MAX_VEL_X)
             this.vel_x = Math.sign(this.vel_x)*MAX_VEL_X;
@@ -134,7 +135,7 @@ class Player {
         this.vel_x *= FRICTION;
         this.vel_y += GRAVITY*FRAME_TIME;
         this.y += this.vel_y*FRAME_TIME;
-        
+
         // fix this hack!
         if (this.y > 200) {
             this.y = 200;
@@ -142,11 +143,10 @@ class Player {
             this.on_ground = true;
         }
 
+        // collision detection
     }
 }
 
-
-//var player = new Player(30,30,10,120,'red');
 
 
 $(document).keydown(function(evnt) {
@@ -179,93 +179,21 @@ var GameCore = {
 
 
 function updateGameArea() {
-    
     GameCore.clear();
     player.update();
+    world.update();
     input.begin_new_frame();
     
+
 }
 
 
 function run() {
     player = new Player(30,30,10,120,'red');
     input = new Input();
+    world = new World();
     GameCore.start();
 }
 
 
-
-
-
-/*
-var canvas = document.getElementById("canvas"),
-    ctx = canvas.getContext("2d");
-
-canvas.width = canvas.height = 300;
-
-var x = 150,
-    y = 150,
-    velY = 0,
-    velX = 0,
-    speed = 2,
-    friction = 0.98,
-    keys = [];
-
-function update() {
-    requestAnimationFrame(update);
-    
-    if (keys[38]) {
-        if (velY > -speed) {
-            velY--;
-        }
-    }
-    
-    if (keys[40]) {
-        if (velY < speed) {
-            velY++;
-        }
-    }
-    if (keys[39]) {
-        if (velX < speed) {
-            velX++;
-        }
-    }
-    if (keys[37]) {
-        if (velX > -speed) {
-            velX--;
-        }
-    }
-
-    velY *= friction;
-    y += velY;
-    velX *= friction;
-    x += velX;
-
-    if (x >= 295) {
-        x = 295;
-    } else if (x <= 5) {
-        x = 5;
-    }
-
-    if (y > 295) {
-        y = 295;
-    } else if (y <= 5) {
-        y = 5;
-    }
-
-    ctx.clearRect(0, 0, 300, 300);
-    ctx.beginPath();
-    ctx.arc(x, y, 5, 0, Math.PI * 2);
-    ctx.fill();
-}
-
-update();
-
-document.body.addEventListener("keydown", function (e) {
-    keys[e.keyCode] = true;
-});
-document.body.addEventListener("keyup", function (e) {
-    keys[e.keyCode] = false;
-});
- */
 
