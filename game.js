@@ -1,10 +1,104 @@
+/*
+    online game engine!
+*/
+
+
+function Rectangle(x,y,w,h) {
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;    
+}
+
+
+function Sprite(x,y,w,h,img) {
+    this.pos = new Rectangle(x,y,w,h);
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+    this.img = img;
+    this.update = function() {
+        console.log('player update');
+    }
+}
+
+
+function GameCore() {
+    var self = this;
+    this.canvas = document.createElement('canvas');
+    this.start = function() {
+        this.canvas.width = 480;
+        this.canvas.height = 270;
+        this.context = this.canvas.getContext('2d');
+        document.body.insertBefore(this.canvas,document.body.childNodes[0]);
+        this.frameNo = 0;
+        this.interval = setInterval(this.update,20);
+        this.player = new Sprite(50,60,0,0,'');
+    }
+    this.clear = function(){
+        this.context.clearRect(0,0,this.canvas.width,this.canvas.height);
+    }
+    this.update = function() {
+        //var self = this;
+        //obj.player.update();
+        //this.player.update();
+        self.player.update();
+    }
+}
+
+
+//function update() {
+//    console.log('main update function');
+//}
+
+
+function run() {
+    var core = new GameCore();
+    core.start();
+    
+}
+
+
+
+
 
 
 
 
 /*
-    canvas structure
+// this works
+function Rectangle(x,y,w,h) {
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+}
+
+function Sprite(x,y,w,h,img) {
+    this.pos = null;
+    this.initialize = function(x,y,w,h) {
+        this.pos = new Rectangle(x,y,w,h);
+    }
+    this.update = function(){
+        console.log(this.pos.x,this.pos.y);        
+    }
+}
+
+function run() {
+    var sprite = new Sprite(0,0,0,0,'');
+    sprite.initialize(50,20,10,10,'');
+    sprite.update();
+}
+
 */
+
+
+
+
+/*
+
+// canvas structure
 var Context = {
     canvas: null,
     context: null,
@@ -95,12 +189,13 @@ $(document).ready(function() {
     },25);
 
 
-    /*
-    Context.context.beginPath();
-    Context.context.rect(0,0,640,480);
-    Context.context.fillStyle = 'black';
-    Context.context.fill();
-    */
+    //Context.context.beginPath();
+    //Context.context.rect(0,0,640,480);
+    //Context.context.fillStyle = 'black';
+    //Context.context.fill();
+    
 
 });
+
+*/
 
