@@ -38,6 +38,8 @@ function MediaManager() {
 }
 
 
+/*
+
 function Input() {
     var self = this;
     this.held_keys = [];
@@ -66,6 +68,9 @@ function Input() {
     }
 }
 
+*/
+
+/*
 
 function Player(x,y,w,h,img) {
     var self = this;
@@ -80,6 +85,7 @@ function Player(x,y,w,h,img) {
     this.on_ground = false;
     this.img = img;
     this.input = new Input();
+
     this.initialize = function() {
         // init sprite here
         $(document).keydown(function(evnt) {
@@ -89,6 +95,7 @@ function Player(x,y,w,h,img) {
             self.input.key_up_event(evnt);
         });
     }
+        
     this.update = function() {
         if (self.input.is_key_held(KEY.LEFT) && 
             self.input.is_key_held(KEY.RIGHT))
@@ -120,23 +127,106 @@ function Player(x,y,w,h,img) {
             this.on_ground = true;
         }
     }
+
     this.move_left = function() {
         self.ax = -WALK_ACCEL;
         console.log(self.ax);
     }
+
     this.move_right = function() {
         self.ax = WALK_ACCEL;
         console.log(self.ax);
     }
+
     this.stop_moving = function() {
         self.ax = 0.0;
         //console.log('stop moving');
     }
+
     this.jump = function() {
         self.vy = -JUMP_VEL;
         console.log(self.y);
     }
 
+}
+
+*/
+
+
+function Input() {
+
+    var self = this;
+    this._pressed = {};
+
+    this.is_down = function(key_code) {
+        return self._pressed[key_code];
+    }
+
+    this.on_keydown = function(event) {
+        self._pressed[event.keyCode] = true;
+    }
+
+    this.on_keyup = function(event) {
+        delete self._pressed[event.keyCode];
+    }
+
+    window.addEventListener('keyup',function(event) { 
+        self.on_keyup(event); 
+    },false);
+
+    window.addEventListener('keydown',function(event) {
+        self.on_keydown(event);
+    },false);
+
+}
+
+
+
+
+function Player(x,y,w,h,img) {
+    var self = this;
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+    this.vx = 0;
+    this.vy = 0;
+    this.ax = 0;
+    this.ay = 0;
+    this.on_ground = false;
+    this.img = img;
+
+    this.initialize = function() {
+        // init sprite here
+        
+
+
+    }
+        
+    this.update = function() {
+        
+        
+        
+    }
+
+    this.move_right = function() {
+        self.ax += 
+        console.log('move right');        
+    }
+
+    this.move_left = function() {
+
+        console.log('move left');
+    }
+
+    this.duck = function() {
+        // duck animation
+    }
+
+    this.jump = function() {
+
+        console.log('jump');
+    }
 
 }
 
@@ -144,23 +234,41 @@ function Player(x,y,w,h,img) {
 function GameCore() {
     var self = this;
     this.canvas = document.createElement('canvas');
+    
     this.initialize = function() {
         self.canvas.width = 480;
         self.canvas.height = 270;
         self.context = this.canvas.getContext('2d');
-        document.body.insertBefore(this.canvas,document.body.childNodes[0]);
+        document.body.insertBefore(self.canvas,document.body.childNodes[0]);
         self.frameNo = 0;
-        self.interval = setInterval(this.update,20);
+        self.interval = setInterval(self.update,20);
+        self.input = new Input();
         self.player = new Player(50,60,0,0,'');
         self.player.initialize();
     }
+    
     this.clear = function(){
         self.context.clearRect(0,0,self.canvas.width,self.canvas.height);
     }
+
     this.update = function() {
+        
+        if (self.input.is_down(KEY.RIGHT)) {
+            self.player.move_right();
+        }
+        if (self.input.is_down(KEY.LEFT)) {
+            self.player.move_left();
+        }
+        if (self.input.is_down(KEY.JUMP)) {
+            // add on ground fxn
+            self.player.jump();
+        }            
+        
         self.player.update();
+
     }
 }
+
 
 
 function run() {
