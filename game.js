@@ -29,6 +29,14 @@ const GRAVITY = 0.001;
 const JUMP_VEL = 0.5;
 
 
+function Rectangle(x,y,w,h) {
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+}
+
+
 function MediaManager() {
     var self = this;
     this.media = {};
@@ -36,6 +44,200 @@ function MediaManager() {
         
     }
 }
+
+
+function Input() {
+
+    var self = this;
+    this._pressed = {};
+    this._timer = new Date();
+
+    this.is_down = function(key_code) {
+        return self._pressed[key_code];
+    }
+    this.on_keydown = function(event) {
+        self._pressed[event.keyCode] = self._timer.getTime();
+    }
+    this.on_keyup = function(event) {
+        delete self._pressed[event.keyCode];
+    }
+
+    window.addEventListener('keyup',function(event) { 
+        self.on_keyup(event); 
+    },false);
+    window.addEventListener('keydown',function(event) {
+        self.on_keydown(event);
+    },false);
+
+}
+
+
+// pass an array of frames
+function Sprite(x,y,w,h,frames,filepath) {
+
+    var self = this;
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+    this.frames = frames;
+    this.frame_no = 0;
+
+    this.img = new Image();
+    this.img.src = filepath;
+
+    this.update_frame = function() {
+        self.frame_no = ++self.frame_no % frames.length;
+        self.x = self.frame_no * self.width;
+    }
+
+    this.draw = function(context,x,y,w,h) {
+        context.drawImage(self.img,
+            self.x,self.y,self.w,self.h,
+            x,y,self.w,self.h);
+    }
+
+}
+
+
+function Player(x,y,w,h,img) {
+    var self = this;
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+    this.vx = 0;
+    this.vy = 0;
+    this.ax = 0;
+    this.ay = 0;
+    this.on_ground = false;
+    //this.img = img;
+
+    this.initialize = function() {
+        // init sprite here
+        
+    }
+        
+    this.update = function() {
+        
+    }
+
+    this.draw = function(context) {
+        
+    }
+
+    this.move_right = function() {
+        self.ax += WALK_ACCEL;
+        console.log(self.ax);        
+    }
+
+    this.move_left = function() {
+        self.ax -= WALK_ACCEL;
+        console.log(self.ax);
+    }
+
+    this.duck = function() {
+        // duck animation
+    }
+
+    this.jump = function() {
+        self.vy = -JUMP_VEL;
+        console.log(self.vy);
+    }
+
+}
+
+
+function GameCore() {
+    var self = this;
+    this.canvas = document.createElement('canvas');
+    
+    this.initialize = function() {
+        self.canvas.width = 480;
+        self.canvas.height = 270;
+        self.context = self.canvas.getContext('2d');
+        document.body.appendChild(self.canvas);
+        self.frameNo = 0;
+        self.interval = setInterval(self.update,20);
+        self.input = new Input();
+        self.player = new Player(50,60,0,0,'');
+        self.player.initialize();
+    }
+    
+    this.clear = function(){
+        self.context.clearRect(0,0,self.canvas.width,self.canvas.height);
+    }
+
+    this.draw = function() {
+
+        self.player.draw(self.context);
+
+    }
+
+    this.update = function() {
+        
+        if (self.input.is_down(KEY.RIGHT)) {
+            self.player.move_right();
+        }
+        if (self.input.is_down(KEY.LEFT)) {
+            self.player.move_left();
+        }
+        if (self.input.is_down(KEY.JUMP)) {
+            // add on ground fxn
+            self.player.jump();
+        }            
+        
+        self.player.update();
+
+    }
+}
+
+
+
+
+
+function TestCore() {
+    
+    var self = this;
+    this.canvas = document.createElement('canvas');
+    //this.sprite = new Sprite(0,0,80,80,[0,1,2,3,4,3,2,1],'img/rainbow-5.png');
+    
+    this.initialize = function() {
+        self.canvas.width = 480;
+        self.canvas.height = 270;
+        self.context = self.canvas.getContext('2d');
+        document.body.appendChild(self.canvas);
+        self.frameNo = 0;
+        self.interval = setInterval(self.update,20);
+        self.sprite = new Sprite(0,0,80,80,[0,1,2,3,4,3,2,1],'img/rainbow-5.png');
+    }
+    
+    this.update = function() {
+        self.sprite.update_frame();
+        self.sprite.draw(self.context,
+            self.sprite.x,self.sprite.y,
+            self.sprite.w,self.sprite.h);
+    }
+
+
+}
+
+
+
+function run() {
+
+    var testcore = new TestCore();
+    testcore.initialize();
+
+    //var core = new GameCore();
+    //core.initialize();    
+
+}
+
+
+
+
+
 
 
 /*
@@ -153,135 +355,6 @@ function Player(x,y,w,h,img) {
 */
 
 
-function Input() {
-
-    var self = this;
-    this._pressed = {};
-
-    this.is_down = function(key_code) {
-        return self._pressed[key_code];
-    }
-
-    this.on_keydown = function(event) {
-        self._pressed[event.keyCode] = true;
-    }
-
-    this.on_keyup = function(event) {
-        delete self._pressed[event.keyCode];
-    }
-
-    window.addEventListener('keyup',function(event) { 
-        self.on_keyup(event); 
-    },false);
-
-    window.addEventListener('keydown',function(event) {
-        self.on_keydown(event);
-    },false);
-
-}
-
-
-
-
-function Player(x,y,w,h,img) {
-    var self = this;
-    this.x = x;
-    this.y = y;
-    this.w = w;
-    this.h = h;
-    this.vx = 0;
-    this.vy = 0;
-    this.ax = 0;
-    this.ay = 0;
-    this.on_ground = false;
-    this.img = img;
-
-    this.initialize = function() {
-        // init sprite here
-        
-
-
-    }
-        
-    this.update = function() {
-        
-        
-        
-    }
-
-    this.move_right = function() {
-        self.ax += 
-        console.log('move right');        
-    }
-
-    this.move_left = function() {
-
-        console.log('move left');
-    }
-
-    this.duck = function() {
-        // duck animation
-    }
-
-    this.jump = function() {
-
-        console.log('jump');
-    }
-
-}
-
-
-function GameCore() {
-    var self = this;
-    this.canvas = document.createElement('canvas');
-    
-    this.initialize = function() {
-        self.canvas.width = 480;
-        self.canvas.height = 270;
-        self.context = this.canvas.getContext('2d');
-        document.body.insertBefore(self.canvas,document.body.childNodes[0]);
-        self.frameNo = 0;
-        self.interval = setInterval(self.update,20);
-        self.input = new Input();
-        self.player = new Player(50,60,0,0,'');
-        self.player.initialize();
-    }
-    
-    this.clear = function(){
-        self.context.clearRect(0,0,self.canvas.width,self.canvas.height);
-    }
-
-    this.update = function() {
-        
-        if (self.input.is_down(KEY.RIGHT)) {
-            self.player.move_right();
-        }
-        if (self.input.is_down(KEY.LEFT)) {
-            self.player.move_left();
-        }
-        if (self.input.is_down(KEY.JUMP)) {
-            // add on ground fxn
-            self.player.jump();
-        }            
-        
-        self.player.update();
-
-    }
-}
-
-
-
-function run() {
-    var core = new GameCore();
-    core.initialize();
-}
-
-
-
-
-
-
-
 /*
 // this works
 function Rectangle(x,y,w,h) {
@@ -308,8 +381,6 @@ function run() {
 }
 
 */
-
-
 
 
 /*
