@@ -4,10 +4,51 @@
 
 /*
 
+function Player(x,y,w,h,img) {
+    var self = this;
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+    this.vx = 0;
+    this.vy = 0;
+    this.ax = 0;
+    this.ay = 0;
+    this.on_ground = false;
+    //this.img = img;
+
+    this.move_right = function() {
+        self.ax += WALK_ACCEL;
+        console.log(self.ax);        
+    }
+
+    this.move_left = function() {
+        self.ax -= WALK_ACCEL;
+        console.log(self.ax);
+    }
+
+    this.jump = function() {
+        self.vy = -JUMP_VEL;
+        console.log(self.vy);
+    }
+
+}
+
+*/
+
+
 var GAME_STATE = Object.freeze({
     PLAY: 1,
     PAUSE: 2,
     QUIT: 3
+});
+
+
+var PLAYER_STATES = Object.freeze({
+    STILL_RIGHT:0,
+    STILL_LEFT:1,
+    WALK_RIGHT:2,
+    WALK_LEFT:3
 });
 
 
@@ -30,6 +71,12 @@ const GRAVITY = 0.001;
 const JUMP_VEL = 0.5;
 
 
+function Vec2D(x,y) {
+    this.x = x;
+    this.y = y;
+}
+
+
 function Input() {
 
     var self = this;
@@ -39,9 +86,11 @@ function Input() {
     this.is_down = function(key_code) {
         return self._pressed[key_code];
     }
+
     this.on_keydown = function(event) {
         self._pressed[event.keyCode] = self._timer.getTime();
     }
+    
     this.on_keyup = function(event) {
         delete self._pressed[event.keyCode];
     }
@@ -49,6 +98,7 @@ function Input() {
     window.addEventListener('keyup',function(event) { 
         self.on_keyup(event); 
     },false);
+    
     window.addEventListener('keydown',function(event) {
         self.on_keydown(event);
     },false);
@@ -56,177 +106,30 @@ function Input() {
 }
 
 
-// pass an array of frames
-function Sprite(x,y,w,h,frames,filepath) {
+function Sprite(x,y,w,h,path) {
 
     var self = this;
-    this.x = x;
-    this.y = y;
+
+    if (typeof x === 'number')
+        x = [x];
+    this.x = [];
+    for (var i = 0; i < x.length; ++i)
+        this.x.push(x[i]*w);
+    this.y = y*h;
     this.w = w;
     this.h = h;
-    this.frames = frames;
+
     this.frame_no = 0;
-
-    this.img = new Image();
-    this.img.src = filepath;
-
-    this.update_frame = function() {
-        self.frame_no = ++self.frame_no % frames.length;
-        self.x = self.frame_no * self.width;
-    }
-
-    this.draw = function(context,x,y,w,h) {
-        context.drawImage(self.img,
-            self.x,self.y,self.w,self.h,
-            x,y,self.w,self.h);
-    }
-
-}
-
-
-function Player(x,y,w,h,img) {
-    var self = this;
-    this.x = x;
-    this.y = y;
-    this.w = w;
-    this.h = h;
-    this.vx = 0;
-    this.vy = 0;
-    this.ax = 0;
-    this.ay = 0;
-    this.on_ground = false;
-    //this.img = img;
-
-    this.initialize = function() {
-        // init sprite here
-        
-    }
-        
-    this.update = function() {
-        
-    }
-
-    this.draw = function(context) {
-        
-    }
-
-    this.move_right = function() {
-        self.ax += WALK_ACCEL;
-        console.log(self.ax);        
-    }
-
-    this.move_left = function() {
-        self.ax -= WALK_ACCEL;
-        console.log(self.ax);
-    }
-
-    this.duck = function() {
-        // duck animation
-    }
-
-    this.jump = function() {
-        self.vy = -JUMP_VEL;
-        console.log(self.vy);
-    }
-
-}
-
-
-function GameCore() {
-    var self = this;
-    this.canvas = document.createElement('canvas');
-    
-    this.initialize = function() {
-        self.canvas.width = 480;
-        self.canvas.height = 270;
-        self.context = self.canvas.getContext('2d');
-        document.body.appendChild(self.canvas);
-        self.frameNo = 0;
-        self.interval = setInterval(self.update,20);
-        self.input = new Input();
-        self.player = new Player(50,60,0,0,'');
-        self.player.initialize();
-    }
-    
-    this.clear = function(){
-        self.context.clearRect(0,0,self.canvas.width,self.canvas.height);
-    }
-
-    this.draw = function() {
-
-        self.player.draw(self.context);
-
-    }
-
-    this.update = function() {
-        
-        if (self.input.is_down(KEY.RIGHT)) {
-            self.player.move_right();
-        }
-        if (self.input.is_down(KEY.LEFT)) {
-            self.player.move_left();
-        }
-        if (self.input.is_down(KEY.JUMP)) {
-            // add on ground fxn
-            self.player.jump();
-        }            
-        
-        self.player.update();
-
-    }
-}
-
-*/
-
-
-var PLAYER = Object.freeze({
-    STL_HRZ_R:[],
-    STL_HRZ_L:[],
-    WLK_HRZ_R:[],
-    WLK_HRZ_L:[],
-    JMP_HRZ_R:[],
-    JMP_HRZ_L:[]
-});
-
-
-function Vec2D(x,y) {
-    this.x = x;
-    this.y = y;
-}
-
-
-// don't need an x position necessarilly
-// the x could be implicit in the array of images in a row
-// the y corresponds to which row of images
-function Sprite(x,y,w,h,frames,path) {
-
-    var self = this;
-    this.x = x;
-    this.y = y;
-    this.w = w;
-    this.h = h;
-
-    // check if media manager has image
-    this.frames = frames;
-    this.frame_no = 0;
-    this.path = path;
     this.img = new Image();
     this.img.src = path;
 
     this.increment = function() {
-        // increment if moving only ...
-        self.frame_no = ++self.frame_no % self.frames.length;
+        self.frame_no = ++self.frame_no % self.x.length;
     }
 
     this.draw = function(ctx,dest_x,dest_y) {
-        // img = media[self.path] pass to draw image
-        // the source comes from frame
-        // the dest puts to canvas
-        var frame = self.frames[self.frame_no];
-        var s_x = frame * self.w;
-
         ctx.drawImage(self.img,
-            s_x,0,self.w,self.h,
+            self.x[self.frame_no],self.y,self.w,self.h,
             dest_x,dest_y,self.w,self.h);
     }
 
@@ -240,45 +143,48 @@ function Player(x,y,w,h) {
     this.y = y;
     this.w = w;
     this.h = h;
-    //this.sprites = [];
+    this.sprites = new Object();
+    this.state = PLAYER_STATES.STILL_RIGHT;
 
-    /*
-    this.STATES = Object.freeze({
-        STILL_RIGHT:[
-            Vec2D(0,1),Vec2D(1,1),Vec2D(0,1),Vec2D(2,1)
-        ],
-        STILL_LEFT:[
-            Vec2D(0,0),Vec2D(1,0),Vec2D(0,0),Vec2D(2,0)
-        ],
-        WALK_RIGHT:[
-            Vec2D(0,1)
-        ],
-        WALK_LEFT:[
-            Vec2D(0,0)
-        ]
-    });
-    */
-
-    this.sprite = new Sprite(0,0,32,32,[0,1,0,2],'img/MyChar.bmp');
-
-    this.init = function(sprite,poses) {
-        var num_states = 2;
-        self.add_sprite([]);
+    this.init = function() {
+        self.add_sprite(PLAYER_STATES.WALK_LEFT,[0,1,0,2],0);
+        self.add_sprite(PLAYER_STATES.WALK_RIGHT,[0,1,0,2],1);
+        self.add_sprite(PLAYER_STATES.STILL_LEFT,[0],0);
+        self.add_sprite(PLAYER_STATES.STILL_RIGHT,[0],1);
     }
 
-    // passes a series of vectors of x,y in frames
-    this.add_sprite = function(row,cols) {
+    this.add_sprite = function(state,x,y) {
+        self.sprites[state] = new Sprite(x,y,32,32,'img/MyChar.bmp');
+    }
 
+    this.move_left = function() {
+        self.state = PLAYER_STATES.WALK_LEFT;
+    }
+
+    this.move_right = function() {
+        self.state = PLAYER_STATES.WALK_RIGHT;
     }
 
     this.update = function() {
-        self.sprite.increment();
+        self.sprites[self.state].increment();
+    }
+
+    this.jump = function() {
+
+    }
+
+    this.stop_moving = function() {
+        if (self.state === PLAYER_STATES.WALK_RIGHT) {
+            self.state = PLAYER_STATES.STILL_RIGHT;
+        }
+        if (self.state === PLAYER_STATES.WALK_LEFT) {
+            self.state = PLAYER_STATES.STILL_LEFT;
+        }
     }
 
     this.draw = function(ctx) {
-        self.sprite.draw(ctx,self.x,self.y);
+        self.sprites[self.state].draw(ctx,self.x,self.y);
     }
-
 
 }
 
@@ -292,10 +198,12 @@ function Core() {
     this.context = this.canvas.getContext('2d');
     document.body.appendChild(this.canvas);
 
+    this.input = new Input();
     this.player = new Player(0,0,32,32);
 
     this.initialize = function() {
-        setInterval(self.iteration,500);
+        setInterval(self.iteration,80);
+        self.player.init();
     }
 
     this.iteration = function() {
@@ -304,12 +212,36 @@ function Core() {
     }
 
     this.update = function() {
+        self.clear();
+
+        if (self.input.is_down(KEY.RIGHT) && self.input.is_down(KEY.LEFT)) {
+            self.player.stop_moving();
+        }
+        else if (self.input.is_down(KEY.RIGHT)) {
+            self.player.move_right();
+        }
+        else if (self.input.is_down(KEY.LEFT)) {
+            self.player.move_left();
+        }
+        else if (!self.input.is_down(KEY.RIGHT) && !self.input.is_down(KEY.LEFT)) {
+            self.player.stop_moving();
+        }
+
+        if (self.input.is_down(KEY.JUMP)) {
+            // add on ground fxn
+            //self.player.jump();
+        }
+
         self.player.update();
-        
     }
 
     this.draw = function() {
         self.player.draw(self.context);
+    }
+
+    this.clear = function(){
+        self.context.clearRect(
+            0,0,self.canvas.width,self.canvas.height);
     }
 
 }
@@ -319,173 +251,6 @@ function run() {
     var core = new Core;
     core.initialize();
 }
-
-
-
-
-
-
-
-
-
-
-
-/*
-
-function Rectangle(x,y,w,h) {
-
-    var self = this;
-    this.x = x;
-    this.y = y;
-    this.w = w;
-    this.h = h;
-
-    this.dimensions = function() {
-        return [self.w, self.h];
-    }
-
-    this.area = function() {
-        return self.w * self.h;
-    }
-}
-
-
-function Square(x,y,s) {
-    
-    var self = this;
-
-    Rectangle.call(this,x,y,s,s);
-
-    //this.x = x;
-    //this.y = y;
-    //this.s = s;
-
-    this.dimensions = function() {
-        //return [self.s];
-        //Rectangle.prototype.dimensions.call(self);
-        return Rectangle.prototype.dimensions;
-    }
-
-    this.area = function() {
-        //Rectangle.call(self);
-        //return self.s * self.s;
-        return self.w * self.h;
-    }
-
-}
-
-
-
-
-Square.prototype = Object.create(Rectangle.prototype);
-
-
-//Square.prototype = new Rectangle;
-//Square.prototype.constructor = Square;
-
-
-function run() {
-    var rect = new Rectangle(5,6,3,8);
-    console.log('rect dimns',rect.dimensions());
-    var squr = new Square(3,2,6);
-    console.log('squr dimns',squr.dimensions());
-}
-
-*/
-
-
-
-
-
-/*
-// this works for drawing images
-function run() {
-    var self = this;
-    this.canvas = document.createElement('canvas');
-    this.canvas.width = 480;
-    this.canvas.height = 270;
-    this.context = this.canvas.getContext('2d');
-    document.body.appendChild(this.canvas);
-    this.img = new Image;
-    this.img.src = 'img/rainbow-5.png';
-    this.upper = function() {
-        self.context.drawImage(img,0,0);
-    }  
-    setInterval(upper,20);
-}
-*/
-
-
-/*
-
-// a still image
-function Sprite(x,y,w,h,filepath) {
-
-    this.x = x;
-    this.y = y;
-    this.w = w;
-    this.h = h;
-
-    this.img = new Image();
-    this.img.src = filepath;
-
-    // pass in body coordinates
-    this.draw = function(context,x,y,w,h) {
-        context.drawImage(self.img,x,y)
-    }
-}
-
-
-
-function TestCore() {
-    
-    var self = this;
-    this.canvas = document.createElement('canvas');
-    this.context = this.canvas.getContext('2d');
-    this.canvas.width = 480;
-    this.canvas.height = 270;
-    document.body.appendChild(self.canvas);
-    
-    this.sprite = new Sprite(0,0,80,80,'img/rainbow-5.png');
-    
-    this.initialize = function() {
-        self.frameNo = 0;
-        self.interval = setInterval(self.update,20);
-        //self.sprite = new Sprite(0,0,80,80,[0,1,2,3,4,3,2,1],'img/rainbow-5.png');
-    }
-    
-    this.update = function() {
-        self.draw();
-    }
-
-    this.draw = function() {
-        // passing arbitrary pos and size vars
-        self.sprite.draw(self.context,100,100,80,80);
-    }
-
-}
-
-
-
-//function run() {
-    //var core = new GameCore();
-    //core.initialize();    
-//}
-
-
-
-
-function run() {
-    var test_core = new TestCore();
-    test_core.initialize();
-}
-
-
-*/
-
-
-
-
 
 
 /*
