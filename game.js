@@ -4,7 +4,7 @@
 
 /*
 
-var STATE = Object.freeze({
+var GAME_STATE = Object.freeze({
     PLAY: 1,
     PAUSE: 2,
     QUIT: 3
@@ -179,8 +179,26 @@ function GameCore() {
 */
 
 
+var PLAYER = Object.freeze({
+    STL_HRZ_R:[],
+    STL_HRZ_L:[],
+    WLK_HRZ_R:[],
+    WLK_HRZ_L:[],
+    JMP_HRZ_R:[],
+    JMP_HRZ_L:[]
+});
 
-function Sprite(x,y,w,h,path) {
+
+function Vec2D(x,y) {
+    this.x = x;
+    this.y = y;
+}
+
+
+// don't need an x position necessarilly
+// the x could be implicit in the array of images in a row
+// the y corresponds to which row of images
+function Sprite(x,y,w,h,frames,path) {
 
     var self = this;
     this.x = x;
@@ -188,20 +206,79 @@ function Sprite(x,y,w,h,path) {
     this.w = w;
     this.h = h;
 
+    // check if media manager has image
+    this.frames = frames;
+    this.frame_no = 0;
     this.path = path;
     this.img = new Image();
     this.img.src = path;
 
-    this.add_img = function(path) {
-        // check if media manager has image
+    this.increment = function() {
+        // increment if moving only ...
+        self.frame_no = ++self.frame_no % self.frames.length;
     }
 
-    this.draw = function(ctx,src_x,src_y,dest_x,dest_y) {
+    this.draw = function(ctx,dest_x,dest_y) {
         // img = media[self.path] pass to draw image
+        // the source comes from frame
+        // the dest puts to canvas
+        var frame = self.frames[self.frame_no];
+        var s_x = frame * self.w;
+
         ctx.drawImage(self.img,
-            src_x,src_y,self.w,self.h,
+            s_x,0,self.w,self.h,
             dest_x,dest_y,self.w,self.h);
     }
+
+}
+
+
+function Player(x,y,w,h) {
+    
+    var self = this;
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+    //this.sprites = [];
+
+    /*
+    this.STATES = Object.freeze({
+        STILL_RIGHT:[
+            Vec2D(0,1),Vec2D(1,1),Vec2D(0,1),Vec2D(2,1)
+        ],
+        STILL_LEFT:[
+            Vec2D(0,0),Vec2D(1,0),Vec2D(0,0),Vec2D(2,0)
+        ],
+        WALK_RIGHT:[
+            Vec2D(0,1)
+        ],
+        WALK_LEFT:[
+            Vec2D(0,0)
+        ]
+    });
+    */
+
+    this.sprite = new Sprite(0,0,32,32,[0,1,0,2],'img/MyChar.bmp');
+
+    this.init = function(sprite,poses) {
+        var num_states = 2;
+        self.add_sprite([]);
+    }
+
+    // passes a series of vectors of x,y in frames
+    this.add_sprite = function(row,cols) {
+
+    }
+
+    this.update = function() {
+        self.sprite.increment();
+    }
+
+    this.draw = function(ctx) {
+        self.sprite.draw(ctx,self.x,self.y);
+    }
+
 
 }
 
@@ -215,16 +292,24 @@ function Core() {
     this.context = this.canvas.getContext('2d');
     document.body.appendChild(this.canvas);
 
-    this.sprite = new Sprite(0,0,80,80,'img/rainbow-5.png');
-    
+    this.player = new Player(0,0,32,32);
 
     this.initialize = function() {
-        setInterval(self.update,20);
+        setInterval(self.iteration,500);
+    }
+
+    this.iteration = function() {
+        self.update();
+        self.draw();
     }
 
     this.update = function() {
-        self.sprite.draw(self.context,
-            self.sprite.x,self.sprite.y,0,0);
+        self.player.update();
+        
+    }
+
+    this.draw = function() {
+        self.player.draw(self.context);
     }
 
 }
@@ -234,6 +319,14 @@ function run() {
     var core = new Core;
     core.initialize();
 }
+
+
+
+
+
+
+
+
 
 
 
