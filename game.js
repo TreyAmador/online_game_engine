@@ -180,7 +180,6 @@ function GameCore() {
 
 
 
-
 function Sprite(x,y,w,h,path) {
 
     var self = this;
@@ -189,13 +188,19 @@ function Sprite(x,y,w,h,path) {
     this.w = w;
     this.h = h;
 
+    this.path = path;
     this.img = new Image();
     this.img.src = path;
 
-    this.draw = function(ctx) {
+    this.add_img = function(path) {
+        // check if media manager has image
+    }
+
+    this.draw = function(ctx,src_x,src_y,dest_x,dest_y) {
+        // img = media[self.path] pass to draw image
         ctx.drawImage(self.img,
-            0,0,this.w,this.h,
-            0,0,80,80);
+            src_x,src_y,self.w,self.h,
+            dest_x,dest_y,self.w,self.h);
     }
 
 }
@@ -211,13 +216,15 @@ function Core() {
     document.body.appendChild(this.canvas);
 
     this.sprite = new Sprite(0,0,80,80,'img/rainbow-5.png');
+    
 
     this.initialize = function() {
         setInterval(self.update,20);
     }
 
     this.update = function() {
-        self.sprite.draw(self.context);
+        self.sprite.draw(self.context,
+            self.sprite.x,self.sprite.y,0,0);
     }
 
 }
@@ -227,6 +234,72 @@ function run() {
     var core = new Core;
     core.initialize();
 }
+
+
+
+/*
+
+function Rectangle(x,y,w,h) {
+
+    var self = this;
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+
+    this.dimensions = function() {
+        return [self.w, self.h];
+    }
+
+    this.area = function() {
+        return self.w * self.h;
+    }
+}
+
+
+function Square(x,y,s) {
+    
+    var self = this;
+
+    Rectangle.call(this,x,y,s,s);
+
+    //this.x = x;
+    //this.y = y;
+    //this.s = s;
+
+    this.dimensions = function() {
+        //return [self.s];
+        //Rectangle.prototype.dimensions.call(self);
+        return Rectangle.prototype.dimensions;
+    }
+
+    this.area = function() {
+        //Rectangle.call(self);
+        //return self.s * self.s;
+        return self.w * self.h;
+    }
+
+}
+
+
+
+
+Square.prototype = Object.create(Rectangle.prototype);
+
+
+//Square.prototype = new Rectangle;
+//Square.prototype.constructor = Square;
+
+
+function run() {
+    var rect = new Rectangle(5,6,3,8);
+    console.log('rect dimns',rect.dimensions());
+    var squr = new Square(3,2,6);
+    console.log('squr dimns',squr.dimensions());
+}
+
+*/
+
 
 
 
