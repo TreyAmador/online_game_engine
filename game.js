@@ -43,6 +43,27 @@ function Vec2D(x,y) {
 }
 
 
+function MediaManager() {
+
+    var self = this;
+    this.files = new Map();
+
+    this.load = function(filepath) {        
+        if (!self.files[filepath]) {
+            var img = new Image();
+            img.src = filepath;
+            self.files[filepath] = img;
+        }
+        return self.files[filepath];
+    }
+
+    this.get = function(filepath) {
+        return self.files[filepath];
+    }
+
+}
+
+
 function Input() {
 
     var self = this;
@@ -86,9 +107,13 @@ function Sprite(x,y,w,h,path) {
     this.h = h;
 
     this.frame_no = 0;
-    this.img = new Image();
-    this.img.src = path;
-
+    //this.img = new Image();
+    //this.img.src = path;
+    
+    this.init = function(media_manager,filepath) {
+        self.img = media_manager.load(filepath);
+    }
+    
     this.increment = function() {
         self.frame_no = ++self.frame_no % (self.x.length);
     }
@@ -119,15 +144,16 @@ function Player(x,y,w,h) {
     this.sprites = new Object();
     this.state = PLAYER_STATES.STILL_RIGHT;
 
-    this.init = function() {
-        self.add_sprite(PLAYER_STATES.WALK_LEFT,[0,1,0,2],0);
-        self.add_sprite(PLAYER_STATES.WALK_RIGHT,[0,1,0,2],1);
-        self.add_sprite(PLAYER_STATES.STILL_LEFT,[0],0);
-        self.add_sprite(PLAYER_STATES.STILL_RIGHT,[0],1);
+    this.init = function(media_manager) {
+        self.add_sprite(PLAYER_STATES.WALK_LEFT,[0,1,0,2],0,media_manager);
+        self.add_sprite(PLAYER_STATES.WALK_RIGHT,[0,1,0,2],1,media_manager);
+        self.add_sprite(PLAYER_STATES.STILL_LEFT,[0],0,media_manager);
+        self.add_sprite(PLAYER_STATES.STILL_RIGHT,[0],1,media_manager);
     }
 
-    this.add_sprite = function(state,x,y) {
+    this.add_sprite = function(state,x,y,media_manager) {
         self.sprites[state] = new Sprite(x,y,32,32,'img/MyChar.bmp');
+        self.sprites[state].init(media_manager,'img/MyChar.bmp');
     }
 
     this.move_left = function() {
@@ -173,6 +199,40 @@ function Player(x,y,w,h) {
 }
 
 
+
+function Tile(x,y,w,h,collide) {
+    var self = this;
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+    this.collide = collide;
+}
+
+
+function World() {
+    
+    var self = this;
+
+    //this.background = new Image();
+    //this.background.src = world_map;
+
+    this.load = function(world_map) {
+        
+    }
+
+    this.update = function() {
+
+    }
+
+    this.draw = function() {
+
+    }
+
+
+}
+
+
 function Core() {
 
     var self = this;
@@ -182,12 +242,13 @@ function Core() {
     this.context = this.canvas.getContext('2d');
     document.body.appendChild(this.canvas);
 
+    this.media_manager = new MediaManager();
     this.input = new Input();
     this.player = new Player(0,0,32,32);
 
     this.initialize = function() {
         setInterval(self.iteration,FRAME_TIME);
-        self.player.init();
+        self.player.init(self.media_manager);
     }
 
     this.iteration = function() {
