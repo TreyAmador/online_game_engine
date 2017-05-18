@@ -2,6 +2,7 @@
     online game engine!
 */
 
+/*
 
 var STATE = Object.freeze({
     PLAY: 1,
@@ -27,23 +28,6 @@ const FRICTION = 0.85;
 const MAX_VEL_X = 0.5;
 const GRAVITY = 0.001;
 const JUMP_VEL = 0.5;
-
-
-function Rectangle(x,y,w,h) {
-    this.x = x;
-    this.y = y;
-    this.w = w;
-    this.h = h;
-}
-
-
-function MediaManager() {
-    var self = this;
-    this.media = {};
-    this.add_sprite = function() {
-        
-    }
-}
 
 
 function Input() {
@@ -192,7 +176,98 @@ function GameCore() {
     }
 }
 
+*/
 
+
+
+
+function Sprite(x,y,w,h,path) {
+
+    var self = this;
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+
+    this.img = new Image();
+    this.img.src = path;
+
+    this.draw = function(ctx) {
+        ctx.drawImage(self.img,
+            0,0,this.w,this.h,
+            0,0,80,80);
+    }
+
+}
+
+
+function Core() {
+
+    var self = this;
+    this.canvas = document.createElement('canvas');
+    this.canvas.width = 480;
+    this.canvas.height = 270;
+    this.context = this.canvas.getContext('2d');
+    document.body.appendChild(this.canvas);
+
+    this.sprite = new Sprite(0,0,80,80,'img/rainbow-5.png');
+
+    this.initialize = function() {
+        setInterval(self.update,20);
+    }
+
+    this.update = function() {
+        self.sprite.draw(self.context);
+    }
+
+}
+
+
+function run() {
+    var core = new Core;
+    core.initialize();
+}
+
+
+
+
+/*
+// this works for drawing images
+function run() {
+    var self = this;
+    this.canvas = document.createElement('canvas');
+    this.canvas.width = 480;
+    this.canvas.height = 270;
+    this.context = this.canvas.getContext('2d');
+    document.body.appendChild(this.canvas);
+    this.img = new Image;
+    this.img.src = 'img/rainbow-5.png';
+    this.upper = function() {
+        self.context.drawImage(img,0,0);
+    }  
+    setInterval(upper,20);
+}
+*/
+
+
+/*
+
+// a still image
+function Sprite(x,y,w,h,filepath) {
+
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+
+    this.img = new Image();
+    this.img.src = filepath;
+
+    // pass in body coordinates
+    this.draw = function(context,x,y,w,h) {
+        context.drawImage(self.img,x,y)
+    }
+}
 
 
 
@@ -200,40 +275,47 @@ function TestCore() {
     
     var self = this;
     this.canvas = document.createElement('canvas');
-    //this.sprite = new Sprite(0,0,80,80,[0,1,2,3,4,3,2,1],'img/rainbow-5.png');
+    this.context = this.canvas.getContext('2d');
+    this.canvas.width = 480;
+    this.canvas.height = 270;
+    document.body.appendChild(self.canvas);
+    
+    this.sprite = new Sprite(0,0,80,80,'img/rainbow-5.png');
     
     this.initialize = function() {
-        self.canvas.width = 480;
-        self.canvas.height = 270;
-        self.context = self.canvas.getContext('2d');
-        document.body.appendChild(self.canvas);
         self.frameNo = 0;
         self.interval = setInterval(self.update,20);
-        self.sprite = new Sprite(0,0,80,80,[0,1,2,3,4,3,2,1],'img/rainbow-5.png');
+        //self.sprite = new Sprite(0,0,80,80,[0,1,2,3,4,3,2,1],'img/rainbow-5.png');
     }
     
     this.update = function() {
-        self.sprite.update_frame();
-        self.sprite.draw(self.context,
-            self.sprite.x,self.sprite.y,
-            self.sprite.w,self.sprite.h);
+        self.draw();
     }
 
+    this.draw = function() {
+        // passing arbitrary pos and size vars
+        self.sprite.draw(self.context,100,100,80,80);
+    }
 
 }
+
+
+
+//function run() {
+    //var core = new GameCore();
+    //core.initialize();    
+//}
+
 
 
 
 function run() {
-
-    var testcore = new TestCore();
-    testcore.initialize();
-
-    //var core = new GameCore();
-    //core.initialize();    
-
+    var test_core = new TestCore();
+    test_core.initialize();
 }
 
+
+*/
 
 
 
