@@ -106,13 +106,11 @@ function Input() {
 }
 
 
-// init sprite by passing 2D array of row,col pairs
-// and width, height
-// or array of rectangles which you can check?
+
+// the sprite class 
+
 function Sprite(x,y,w,h) {
-
     var self = this;
-
     if (typeof x === 'number')
         x = [x];
     this.x = [];
@@ -122,22 +120,22 @@ function Sprite(x,y,w,h) {
     this.w = w;
     this.h = h;
     this.frame_no = 0;
-    
-    this.init = function(media_manager,filepath) {
-        self.img = media_manager.load(filepath);
-    }
-    
-    this.increment = function() {
-        self.frame_no = ++self.frame_no % (self.x.length);
-    }
-
-    this.draw = function(ctx,dest_x,dest_y) {
-        ctx.drawImage(self.img,
-            self.x[self.frame_no],self.y,self.w,self.h,
-            dest_x,dest_y,self.w,self.h);
-    }
-
 }
+
+Sprite.prototype.init = function(media_manager,filepath) {
+    this.img = media_manager.load(filepath);
+}
+
+Sprite.prototype.increment = function() {
+    this.frame_no = ++this.frame_no % (this.x.length);
+}
+
+Sprite.prototype.draw = function(ctx,dest_x,dest_y) {
+    ctx.drawImage(this.img,
+        this.x[this.frame_no],this.y,this.w,this.h,
+        dest_x,dest_y,this.w,this.h);
+}
+
 
 
 function Player(x,y,w,h) {
@@ -207,9 +205,6 @@ function Player(x,y,w,h) {
         else if (self.state === PLAYER_STATES.WALK_LEFT)
             self.state = PLAYER_STATES.STILL_LEFT;
     }
-
-
-    //this.
 
     this.update = function(frame_time) {
 
