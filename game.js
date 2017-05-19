@@ -3,14 +3,20 @@
 */
 
 
+
+
+
+
 const MSEC_PER_SEC = 1000;
 const FRAMES_PER_SEC = 30;
 const FRAME_TIME = MSEC_PER_SEC / FRAMES_PER_SEC;
 const WALK_ACCEL = 0.001;
-const FRICTION = 0.85;
+const FRICTION = 0.75;
 const MAX_VEL_X = 0.5;
 const GRAVITY = 0.001;
 const JUMP_VEL = 0.5;
+const CANVAS_WIDTH = 640;
+const CANVAS_HEIGHT = 480;
 
 
 var GAME_STATE = Object.freeze({
@@ -100,7 +106,10 @@ function Input() {
 }
 
 
-function Sprite(x,y,w,h,path) {
+// init sprite by passing 2D array of row,col pairs
+// and width, height
+// or array of rectangles which you can check?
+function Sprite(x,y,w,h) {
 
     var self = this;
 
@@ -149,7 +158,7 @@ function Player(x,y,w,h) {
 
     this.sprites = new Object();
     this.state = PLAYER_STATES.STILL_RIGHT;
-    this.collision = null;
+    this.rect_clsn = null;
 
     this.init_collision = function(off_x, off_y, width, height) {
         var rectangle = new Rectangle(
@@ -171,7 +180,7 @@ function Player(x,y,w,h) {
         self.add_sprite(PLAYER_STATES.JUMP_RIGHT,[1],1,32,32,media_manager);
         self.add_sprite(PLAYER_STATES.JUMP_LEFT,[1],0,32,32,media_manager);
 
-        self.collision = self.init_collision(10,5,20,5);
+        self.rect_clsn = self.init_collision(10,5,20,5);
 
     }
 
@@ -199,31 +208,44 @@ function Player(x,y,w,h) {
             self.state = PLAYER_STATES.STILL_LEFT;
     }
 
-    this.update = function() {
 
-        self.vx += self.ax*FRAME_TIME;
+    //this.
+
+    this.update = function(frame_time) {
+
+        self.vx += self.ax*frame_time;
         if (Math.abs(self.vx) > MAX_VEL_X)
             self.vx = Math.sign(self.vx)*MAX_VEL_X;
-        self.x += self.vx*FRAME_TIME;
-        self.vx *= FRICTION;
         
-        self.vy += GRAVITY*FRAME_TIME;
-        self.y += self.vy*FRAME_TIME;
+        // shouldn't be frame time, but
+        // difference from last calculation
+        
+        self.vx += self.ax*frame_time;
+        if (Math.abs(self.vx) > MAX_VEL_X)
+            self.vx = Math.sign(self.vx)*MAX_VEL_X;
+        var delta_x = self.vx * frame_time;
+        self.vx *= FRICTION;
+
+        self.vy += GRAVITY*frame_time;
+        var delta_y = self.vy*frame_time;
+
+        self.x += delta_x;
+        self.y += delta_y;
 
         // this is a hack...
         // fix with collision detection!
-        if (self.y >= 200) {
+        if (self.y >= 400) {
             self.vy = 0;
             self.ay = 0;
-            self.y = 200;
+            self.y = 400;
             self.on_ground = true;
         } else {
             self.on_ground = false;
         }
 
         // update collsions rectangle
-        self.collision.x = self.x + 10;
-        self.collision.y = self.y + 5;
+        self.rect_clsn.x = self.x + 10;
+        self.rect_clsn.y = self.y + 5;
 
         // this will have to be tailored based on player state
         // series of if statements?
@@ -235,7 +257,7 @@ function Player(x,y,w,h) {
         self.sprites[self.state].draw(ctx,self.x,self.y);
 
         // collision detection rect... remove later
-        ctx.strokeRect(self.collision.x,self.collision.y,self.collision.w,self.collision.h);
+        ctx.strokeRect(self.rect_clsn.x,self.rect_clsn.y,self.rect_clsn.w,self.rect_clsn.h);
         ctx.strokeStyle = 'red';
         ctx.lineWidth = 3;
         ctx.stroke();
@@ -247,23 +269,48 @@ function Player(x,y,w,h) {
 
 
 function Tile(x,y,w,h) {
+
     var self = this;
+    
     this.x = x;
     this.y = y;
     this.w = w;
     this.h = h;
+
+    this.init = function(media_manager,filepath) {
+        self.sprite = new Sprite(self.x,self.y,self.w,self.h);
+        self.sprite.init(media_manager,filepath);    
+    }
+
+    this.update = function() {
+        // not much here unless animated
+    }
+
 }
 
 
 function World() {    
     var self = this;
+
     this.load = function(world_map) {
-        
+        self.test_world();
     }
+    
+    this.test_world = function() {
+
+        var tile_width = 32, tile_height = 32;
+
+
+        //for (var r = 0; r < )
+
+
+    }
+
     this.update = function() {
 
     }
-    this.draw = function() {
+    
+    this.draw = function(context) {
 
     }
 }
@@ -273,8 +320,8 @@ function Core() {
 
     var self = this;
     this.canvas = document.createElement('canvas');
-    this.canvas.width = 480;
-    this.canvas.height = 270;
+    this.canvas.width = CANVAS_WIDTH;
+    this.canvas.height = CANVAS_HEIGHT;
     this.context = this.canvas.getContext('2d');
     document.body.appendChild(this.canvas);
 
@@ -283,17 +330,21 @@ function Core() {
     this.player = new Player(0,0,32,32);
 
     this.initialize = function() {
+        // change the set interval function to something more accurate
         setInterval(self.iteration,FRAME_TIME);
         self.player.init(self.media_manager);
     }
 
     this.iteration = function() {
-        self.update();
+
+        // pass in time difference to update
+
+        self.update(FRAME_TIME);
         self.draw();
     }
 
-    this.update = function() {
-        self.clear();
+    this.update = function(frame_time) {
+        
 
         if (self.input.is_down(KEY.RIGHT) && self.input.is_down(KEY.LEFT))
             self.player.stop_moving();
@@ -309,10 +360,11 @@ function Core() {
             self.player.jump();
         }
 
-        self.player.update();
+        self.player.update(frame_time);
     }
 
     this.draw = function() {
+        self.clear();
         self.player.draw(self.context);
     }
 
@@ -328,5 +380,6 @@ function run() {
     var core = new Core;
     core.initialize();
 }
+
 
 
