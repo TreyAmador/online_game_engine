@@ -3,6 +3,16 @@
 */
 
 
+const MSEC_PER_SEC = 1000;
+const FRAMES_PER_SEC = 30;
+const FRAME_TIME = MSEC_PER_SEC / FRAMES_PER_SEC;
+const WALK_ACCEL = 0.001;
+const FRICTION = 0.85;
+const MAX_VEL_X = 0.5;
+const GRAVITY = 0.001;
+const JUMP_VEL = 0.5;
+
+
 var GAME_STATE = Object.freeze({
     PLAY: 1,
     PAUSE: 2,
@@ -14,7 +24,10 @@ var PLAYER_STATES = Object.freeze({
     STILL_RIGHT:0,
     STILL_LEFT:1,
     WALK_RIGHT:2,
-    WALK_LEFT:3
+    WALK_LEFT:3,
+    JUMP_RIGHT:4,
+    JUMP_LEFT:5
+
 });
 
 
@@ -27,26 +40,24 @@ var KEY = Object.freeze({
 });
 
 
-const MSEC_PER_SEC = 1000;
-const FRAMES_PER_SEC = 50;
-const FRAME_TIME = MSEC_PER_SEC / FRAMES_PER_SEC;
-const WALK_ACCEL = 0.002;
-const FRICTION = 0.85;
-const MAX_VEL_X = 0.5;
-const GRAVITY = 0.001;
-const JUMP_VEL = 0.5;
-
-
 function Vec2D(x,y) {
     this.x = x;
     this.y = y;
 }
 
 
+function Rectangle(x,y,w,h) {
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+}
+
+
 function MediaManager() {
 
     var self = this;
-    this.files = new Map();
+    this.files = new Object();
 
     this.load = function(filepath) {        
         if (!self.files[filepath]) {
@@ -57,29 +68,25 @@ function MediaManager() {
         return self.files[filepath];
     }
 
-    this.get = function(filepath) {
-        return self.files[filepath];
-    }
-
 }
 
 
 function Input() {
 
     var self = this;
-    this._pressed = {};
-    this._timer = new Date();
+    this.pressed = {};
+    this.timer = new Date();
 
     this.is_down = function(key_code) {
-        return self._pressed[key_code];
+        return self.pressed[key_code];
     }
 
     this.on_keydown = function(event) {
-        self._pressed[event.keyCode] = self._timer.getTime();
+        self.pressed[event.keyCode] = self.timer.getTime();
     }
     
     this.on_keyup = function(event) {
-        delete self._pressed[event.keyCode];
+        delete self.pressed[event.keyCode];
     }
 
     window.addEventListener('keyup',function(event) { 
@@ -105,10 +112,7 @@ function Sprite(x,y,w,h,path) {
     this.y = y*h;
     this.w = w;
     this.h = h;
-
     this.frame_no = 0;
-    //this.img = new Image();
-    //this.img.src = path;
     
     this.init = function(media_manager,filepath) {
         self.img = media_manager.load(filepath);
@@ -141,19 +145,34 @@ function Player(x,y,w,h) {
     this.w = w;
     this.h = h;
 
+    this.on_ground = false;
+
     this.sprites = new Object();
     this.state = PLAYER_STATES.STILL_RIGHT;
+    this.collision = null;
 
-    this.init = function(media_manager) {
-        self.add_sprite(PLAYER_STATES.WALK_LEFT,[0,1,0,2],0,media_manager);
-        self.add_sprite(PLAYER_STATES.WALK_RIGHT,[0,1,0,2],1,media_manager);
-        self.add_sprite(PLAYER_STATES.STILL_LEFT,[0],0,media_manager);
-        self.add_sprite(PLAYER_STATES.STILL_RIGHT,[0],1,media_manager);
+    this.init_collision = function(off_x, off_y, width, height) {
+        var rectangle = new Rectangle(
+            self.x + off_x, self.y + off_y,
+            self.w - width, self.h - height);
+        return rectangle;
     }
 
-    this.add_sprite = function(state,x,y,media_manager) {
-        self.sprites[state] = new Sprite(x,y,32,32,'img/MyChar.bmp');
+    this.add_sprite = function(state,x,y,w,h,media_manager) {
+        self.sprites[state] = new Sprite(x,y,w,h);
         self.sprites[state].init(media_manager,'img/MyChar.bmp');
+    }
+
+    this.init = function(media_manager) {
+        self.add_sprite(PLAYER_STATES.WALK_LEFT,[0,1,0,2],0,32,32,media_manager);
+        self.add_sprite(PLAYER_STATES.WALK_RIGHT,[0,1,0,2],1,32,32,media_manager);
+        self.add_sprite(PLAYER_STATES.STILL_LEFT,[0],0,32,32,media_manager);
+        self.add_sprite(PLAYER_STATES.STILL_RIGHT,[0],1,32,32,media_manager);
+        self.add_sprite(PLAYER_STATES.JUMP_RIGHT,[1],1,32,32,media_manager);
+        self.add_sprite(PLAYER_STATES.JUMP_LEFT,[1],0,32,32,media_manager);
+
+        self.collision = self.init_collision(10,5,20,5);
+
     }
 
     this.move_left = function() {
@@ -166,6 +185,20 @@ function Player(x,y,w,h) {
         self.state = PLAYER_STATES.WALK_RIGHT;
     }
 
+    this.jump = function() {
+        if (self.on_ground) {
+            self.vy = -JUMP_VEL;
+        }
+    }
+
+    this.stop_moving = function() {
+        self.ax = 0;
+        if (self.state === PLAYER_STATES.WALK_RIGHT)
+            self.state = PLAYER_STATES.STILL_RIGHT;
+        else if (self.state === PLAYER_STATES.WALK_LEFT)
+            self.state = PLAYER_STATES.STILL_LEFT;
+    }
+
     this.update = function() {
 
         self.vx += self.ax*FRAME_TIME;
@@ -174,62 +207,65 @@ function Player(x,y,w,h) {
         self.x += self.vx*FRAME_TIME;
         self.vx *= FRICTION;
         
-        //self.vy += GRAVITY*FRAME_TIME;
-        //self.y += self.vy*FRAME_TIME;
+        self.vy += GRAVITY*FRAME_TIME;
+        self.y += self.vy*FRAME_TIME;
 
+        // this is a hack...
+        // fix with collision detection!
+        if (self.y >= 200) {
+            self.vy = 0;
+            self.ay = 0;
+            self.y = 200;
+            self.on_ground = true;
+        } else {
+            self.on_ground = false;
+        }
+
+        // update collsions rectangle
+        self.collision.x = self.x + 10;
+        self.collision.y = self.y + 5;
+
+        // this will have to be tailored based on player state
+        // series of if statements?
         self.sprites[self.state].increment();
-    }
 
-    this.jump = function() {
-
-    }
-
-    this.stop_moving = function() {
-        self.ax = 0;
-        if (self.state === PLAYER_STATES.WALK_RIGHT)
-            self.state = PLAYER_STATES.STILL_RIGHT;
-        if (self.state === PLAYER_STATES.WALK_LEFT)
-            self.state = PLAYER_STATES.STILL_LEFT;
     }
 
     this.draw = function(ctx) {
         self.sprites[self.state].draw(ctx,self.x,self.y);
+
+        // collision detection rect... remove later
+        ctx.strokeRect(self.collision.x,self.collision.y,self.collision.w,self.collision.h);
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        // remove later
+
     }
 
 }
 
 
-
-function Tile(x,y,w,h,collide) {
+function Tile(x,y,w,h) {
     var self = this;
     this.x = x;
     this.y = y;
     this.w = w;
     this.h = h;
-    this.collide = collide;
 }
 
 
-function World() {
-    
+function World() {    
     var self = this;
-
-    //this.background = new Image();
-    //this.background.src = world_map;
-
     this.load = function(world_map) {
         
     }
-
     this.update = function() {
 
     }
-
     this.draw = function() {
 
     }
-
-
 }
 
 
@@ -267,11 +303,10 @@ function Core() {
             self.player.move_left();
         else if (!self.input.is_down(KEY.RIGHT) && !self.input.is_down(KEY.LEFT))
             self.player.stop_moving();
-        // last could be simply an else statement
+        // last could be simply an else statement ?
 
         if (self.input.is_down(KEY.JUMP)) {
-            // add on ground fxn
-            //self.player.jump();
+            self.player.jump();
         }
 
         self.player.update();
