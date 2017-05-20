@@ -46,27 +46,9 @@ Timer.prototype.interval = function() {
 
 
 Timer.prototype.frames_elapsed = function() {
-
-    ++this.span;
-
-    //var passed = false;
-    //var curr = this.time.getTime();
-    //var delta = curr - this.prev;
-    //this.span += delta;
-    //console.log('delta:',delta);
-    //if (this.span > this.rate) {
-    //    this.span = 0;
-    //    this.prev = curr;
-    //    passed = true;
-    //}
-    //return passed;
-
-    var reached = false;
-    if (this.span >= this.rate) {
-        reached = true;
-        this.span = 0;
-    }
-    return reached;
+    return 
+        ++this.span >= this.rate ? 
+        !(this.span = 0) : false;
 }
 
 

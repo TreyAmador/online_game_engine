@@ -9,7 +9,9 @@
 // could be different for different frames, for example
 // could perhaps pass sprite if simple 
 function Sprite() {
-    this.clear_frames();
+    //this.clear_frames();
+    this.frames = [];
+    this.frame_no = 0;
 }
 
 
@@ -111,14 +113,11 @@ Sprite.prototype.clear_frames = function() {
 }
 
 
-Sprite.prototype.update = function(time,func) {
+Sprite.prototype.update = function(time,interval,func) {
     if (func)
         this.frame_no = func(time);
     else
         this.frame_no = ++this.frame_no % this.frames.length;
-    
-    
-    
 }
 
 

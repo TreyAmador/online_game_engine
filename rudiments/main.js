@@ -1,6 +1,12 @@
 // test core
 
 
+const MSEC_PER_SEC = 1000;
+const FRAME_PER_SEC = 15;   // this doesn't seem to work?
+const MSEC_PER_FRAME = MSEC_PER_SEC / FRAME_PER_SEC;
+
+
+
 function Core() {
 
     var self = this;
@@ -12,11 +18,10 @@ function Core() {
     document.body.appendChild(this.canvas);
 
     this.initialize = function() {
-        
-        self.sprite = new Sprite();
-        self.sprite.init_img('img/ambig-right.png', MediaManager);
 
-        self.sprite.init_coord_frames([
+        self.sprite_right = new Sprite();
+        self.sprite_right.init_img('img/ambig-right.png',MediaManager);
+        self.sprite_right.init_coord_frames([
                 new Vec2D(4,0),
                 new Vec2D(5,0),
                 new Vec2D(6,0),
@@ -27,31 +32,35 @@ function Core() {
                 new Vec2D(3,1)
             ],64,64);
 
-        //self.timer = new Timer(1);
-        //self.timer.initialize();
-        
-        setInterval(function() {
+        self.sprite_left = new Sprite();
+        self.sprite_left.init_img('img/ambig-left.png',MediaManager);
+        self.sprite_left.init_coord_frames([
+                new Vec2D(3,0),
+                new Vec2D(2,0),
+                new Vec2D(1,0),
+                new Vec2D(0,0),
+                new Vec2D(7,1),
+                new Vec2D(6,1),
+                new Vec2D(5,1),
+                new Vec2D(4,1)
+            ],64,64);
 
+        setInterval(function() {
             self.update(50);
             self.clear();
             self.draw();
+        },MSEC_PER_FRAME);
 
-            //if (self.timer.frames_elapsed()) {
-            //    console.log('passed!')
-            //} else {
-            //    console.log('not passed....');
-            //}
-
-        },60);
     }
 
     this.update = function(time) {
-        //if (self.timer.frames_elapsed())
-            self.sprite.update(time);
+        self.sprite_right.update(time);
+        self.sprite_left.update(time);
     }
 
     this.draw = function() {
-        self.sprite.draw(self.context,64,64);
+        self.sprite_right.draw(self.context,64,64);
+        self.sprite_left.draw(self.context,128,64);
     }
 
     this.clear = function(){
@@ -61,9 +70,11 @@ function Core() {
 
 }
 
+
 function run() {
     var core = new Core;
     core.clear();
     core.initialize();
 }
+
 
