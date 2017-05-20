@@ -57,7 +57,7 @@ Character.prototype.print = function() {
 }
 
 
-var character = new Character();
-character.print();
+//var character = new Character();
+//character.print();
 
 

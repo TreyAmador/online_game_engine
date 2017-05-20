@@ -43,3 +43,15 @@ Input.prototype.is_key_held = function(key) {
 }
 
 
+Input.prototype.init = function() {
+    var self = this;
+    window.addEventListener('keyup',function(event) { 
+        self.key_up_event(event); 
+    },false);
+
+    window.addEventListener('keydown',function(event) {
+        self.key_down_event(event);
+    },false);
+}
+
+

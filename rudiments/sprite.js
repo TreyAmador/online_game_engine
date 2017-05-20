@@ -7,11 +7,11 @@
 // could also pass in function that is executed
 // with each iteration...?
 // could be different for different frames, for example
-// could perhaps pass sprite if simple 
+// could perhaps pass sprite if simple
 function Sprite() {
-    //this.clear_frames();
     this.frames = [];
     this.frame_no = 0;
+    this.timer = new Timer(1);
 }
 
 
@@ -72,10 +72,7 @@ Sprite.prototype.init_img = function(filepath,manager) {
 
 
 Sprite.prototype.frame_update_rate = function(rate) {
-    
-    //this.timer = new Timer(rate);
-
-    
+    this.timer.set_rate(rate > 0 ? rate : 1);
 }
 
 
@@ -113,10 +110,8 @@ Sprite.prototype.clear_frames = function() {
 }
 
 
-Sprite.prototype.update = function(time,interval,func) {
-    if (func)
-        this.frame_no = func(time);
-    else
+Sprite.prototype.update = function(time,func) {
+    if (this.timer.frames_elapsed())
         this.frame_no = ++this.frame_no % this.frames.length;
 }
 
