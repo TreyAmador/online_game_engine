@@ -1,6 +1,15 @@
 // body superclass
 
 
+
+function inherits_from(BaseClass,SuperClass,x,y,z) {
+    BaseClass.prototype = new SuperClass();
+    BaseClass.prototype.constructor = SuperClass;
+    SuperClass.call(BaseClass,x,y,z);
+}
+
+
+
 function Body(x,y) {
     this.x = x;
     this.y = y;
@@ -38,8 +47,17 @@ Square.prototype.print = function() {
 }
 
 
-var sqr = new Square(2,3,7);
-sqr.print();
+function Character() {
+    inherits_from(this,Square,1,2,3);
+}
 
+
+Character.prototype.print = function() {
+    Body.prototype.print.call(this);
+}
+
+
+var character = new Character();
+character.print();
 
 
