@@ -81,21 +81,13 @@ function Player(BaseBody) {
     // TODO try to find a way to call from inside constructor
     
 
-    //inherits_from(Body,Quadrangle);
-    //inherits_from(Quadrangle,Player);
-    
-    //for (var i = 0; i < BaseBody.length; ++i) {
-    //    console.log(BaseBody[i]);
-    //}
-
-
     // append elements of superclass to subclass
     // by iterating through the superclass
-    var quad = new Quadrangle();
+    //var quad = new Quadrangle();
+    //for (var i in quad) {
+    //    console.log(i,quad[i]);
+    //}
 
-    for (var i in quad) {
-        console.log(i,quad[i]);
-    }
 
     this.sprites = {};
     this.state = null;
@@ -197,4 +189,90 @@ sub.sub_sub_func();
 */
 
 
+
+
+// example of how to inheritance chains
+//function inherit_func(SuperClass,SubClass) {
+//    SubClass.prototype = new SuperClass();
+//    SubClass.prototype.constructor = SubClass;
+//    SuperClass.call(SubClass);
+//}
+
+
+
+
+function inherit_func(SuperClass,SubClass) {
+
+    var super_class = new SuperClass();
+
+    //console.log('SuperClass of inherit_from',SuperClass.prototype);
+    //console.log('SubClass of inherit_from',SubClass.prototype);
+    //console.log('super_class of inherit_from',super_class.constructor);
+    
+    //var func = function() {}
+    
+    //console.log('begin inherit',super_class.constructor);
+
+    for (var i in super_class) {
+        //console.log('inherit_func iter',i,super_class[i]);
+        //console.log('inherit String!',i,super_class[i].toString());
+        if (super_class[i] === SuperClass.prototype.constructor) {
+            console.log('They are equal!');
+        } else {
+            console.log('They are NOT equal!');
+            console.log(super_class.constructor);
+            console.log(super_class[i]);
+        }
+        SubClass.prototype[i] = super_class[i];
+    }
+
+    //SubClass.prototype = super_class;
+    SubClass.prototype.constructor = SubClass;
+    SuperClass.call(SubClass);
+
+    
+    console.log('\n');
+    console.log('\n');
+
+}
+
+
+
+function SuperClass() {
+    this.super_var = 'super var';
+}
+
+SuperClass.prototype.super_func = function() {
+    console.log(this.super_var,'super_func');
+}
+
+function SubClass() {
+    this.sub_var = 'sub var';
+}
+
+inherit_func(SuperClass,SubClass);
+
+SubClass.prototype.sub_func = function() {
+    console.log(this.sub_var,'sub_func');
+    console.log(this.super_var,'sub_func');
+}
+
+
+
+function SubSubClass() {
+    this.sub_sub_var = 'sub sub var';
+}
+
+inherit_func(SubClass,SubSubClass);
+
+SubSubClass.prototype.sub_sub_func = function() {
+
+}
+
+
+var sub = new SubClass();
+//console.log('super func to be called');
+//sub.super_func();
+//sub.sub_func();
+//console.log('Sub prototype',sub);
 
