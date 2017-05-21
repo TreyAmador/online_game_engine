@@ -16,21 +16,6 @@ function inherits_from(SuperClass,SubClass,members) {
 }
 
 
-//SubClass.prototype = new SuperClass();
-//SubClass.prototype.constructor = SubClass;
-//SuperClass.call(SubClass);
-
-
-
-
-/*
-function inherits_from(SuperClass,BaseClass,members) {
-    SuperClass.prototype = new BaseClass();
-    SuperClass.prototype.constructor = BaseClass;   // should assign SuperClass
-    BaseClass.call(SuperClass);
-}
-*/
-
 
 function Body(x,y,w,h) {
     
@@ -38,6 +23,8 @@ function Body(x,y,w,h) {
     this.y = y;
     this.w = w;
     this.h = h;
+
+
 
 }
 
@@ -72,33 +59,54 @@ Body.prototype.draw = function(context) {
 }
 
 
+//inherits_from(Body,Quadrangle);
+
+
 
 // the player class will inherit this or something like it
 function Quadrangle(x,y,w,h) {
-    inherits_from(Body,this);
-    this.set_spatiality()
+    //inherits_from(Body,this);
+    //this.set_spatiality()
 }
-
-
-Quadrangle.prototype.set_spatiality = function(x,y,w,h) {
-    this.x = x;
-    this.y = y;
-    this.w = w;
-    this.h = h;
-}
-
 
 inherits_from(Body,Quadrangle);
 
 
+//var BaseBody;
+//console.log(BaseBody);
+
+
 // a player class
 function Player(BaseBody) {
-    inherits_from(BaseBody,this);
+    // TODO try to find a way to call from inside constructor
+    
+
+    //inherits_from(Body,Quadrangle);
+    //inherits_from(Quadrangle,Player);
+    
+    //for (var i = 0; i < BaseBody.length; ++i) {
+    //    console.log(BaseBody[i]);
+    //}
+
+
+    // append elements of superclass to subclass
+    // by iterating through the superclass
+    var quad = new Quadrangle();
+
+    for (var i in quad) {
+        console.log(i,quad[i]);
+    }
+
     this.sprites = {};
     this.state = null;
+    
 }
 
-//inherits_from(Quadrangle,Body);
+
+
+//console.log(BaseBody);
+// an inheritance method that sets the function
+inherits_from(Quadrangle,Player);
 
 
 Player.prototype.add_coord_sprite = function(filepath,frames,w,h,state) {
@@ -111,31 +119,6 @@ Player.prototype.add_coord_sprite = function(filepath,frames,w,h,state) {
 Player.prototype.add_row_sprite = function() {
     
 }
-
-
-/*
-
-Player.prototype.init_dimensions = function(x,y,w,h) {
-    this.x = x;
-    this.y = y;
-    this.w = w;
-    this.h = h;
-}
-
-
-Player.prototype.init_pos = function(x,y) {
-    this.x = x;
-    this.y = y;
-}
-
-
-Player.prototype.init_size = function(w,h) {
-    this.w = w;
-    this.h = h;
-}
-
-*/
-
 
 
 Player.prototype.set_state = function(state) {
@@ -160,6 +143,10 @@ Player.prototype.update = function(elapsed_time) {
 
 
 
+
+/*
+
+// example of how to inheritance chains
 
 function inherit_func(SuperClass,SubClass) {
     SubClass.prototype = new SuperClass();
@@ -206,4 +193,8 @@ var sub = new SubSubClass();
 sub.super_func();
 sub.sub_func();
 sub.sub_sub_func();
+
+*/
+
+
 

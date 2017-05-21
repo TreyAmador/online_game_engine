@@ -42,7 +42,6 @@ Core.prototype.initialize = function() {
     this.player.set_spatiality(128,256,64,64);
 
 
-
     var self = this;
     setInterval(function() {
         self.update(50);
