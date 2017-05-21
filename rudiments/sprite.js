@@ -4,10 +4,6 @@
 
 
 // initial size of sprite
-// could also pass in function that is executed
-// with each iteration...?
-// could be different for different frames, for example
-// could perhaps pass sprite if simple
 function Sprite() {
     this.frames = [];
     this.frame_no = 0;
@@ -110,6 +106,9 @@ Sprite.prototype.clear_frames = function() {
 }
 
 
+// could also pass in function that is executed
+// with each iteration...?
+// could be different for different frames, for example
 Sprite.prototype.update = function(time,func) {
     if (this.timer.frames_elapsed())
         this.frame_no = ++this.frame_no % this.frames.length;

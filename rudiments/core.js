@@ -2,14 +2,18 @@
 
 
 
-var KEY = Object.freeze({
-    UP: 38,
-    DOWN: 40,
-    RIGHT: 39,
-    LEFT: 37,
-    JUMP: 32
+var KEY = Object({
+    UP:38,
+    DOWN:40,
+    RIGHT:39,
+    LEFT:37,
+    SPACE:32
 });
 
+
+var ACTION = Object({
+
+});
 
 
 const MSEC_PER_SEC = 1000;
@@ -18,9 +22,9 @@ const MSEC_PER_FRAME = MSEC_PER_SEC / FRAME_PER_SEC;
 
 
 
-function Core() {
+// a camera class should have the context....
 
-    var self = this;
+function Core() {
 
     this.canvas = document.createElement('canvas');
     this.canvas.width = 640;
@@ -28,89 +32,93 @@ function Core() {
     this.context = this.canvas.getContext('2d');
     document.body.appendChild(this.canvas);
 
-
-    // initialize input class
     this.input = new Input();
-    this.input.init();
-
-
-    this.initialize = function() {
-
-        self.sprite_right = new Sprite();
-        self.sprite_right.init_img('img/ambig-right.png',MediaManager);
-        self.sprite_right.init_coord_frames([
-                new Vec2D(4,0),
-                new Vec2D(5,0),
-                new Vec2D(6,0),
-                new Vec2D(7,0),
-                new Vec2D(0,1),
-                new Vec2D(1,1),
-                new Vec2D(2,1),
-                new Vec2D(3,1)
-            ],64,64);
-
-        self.sprite_left = new Sprite();
-        self.sprite_left.init_img('img/ambig-left.png',MediaManager);
-        self.sprite_left.init_coord_frames([
-                new Vec2D(3,0),
-                new Vec2D(2,0),
-                new Vec2D(1,0),
-                new Vec2D(0,0),
-                new Vec2D(7,1),
-                new Vec2D(6,1),
-                new Vec2D(5,1),
-                new Vec2D(4,1)
-            ],64,64);
-
-        setInterval(function() {
-            self.update(50);
-            self.clear();
-            self.draw();
-        },MSEC_PER_FRAME);
-
-    }
-
-    this.update = function(time) {
-
-        if (self.input.is_key_held(KEY.RIGHT) && self.input.is_key_held(KEY.LEFT)) {
-
-        }
-        else if (self.input.is_key_held(KEY.RIGHT)) {
-
-        }
-        else if (self.input.is_key_held(KEY.LEFT)){
-            
-        }
-        else if (!self.input.is_key_held(KEY.RIGHT) && !self.input.is_key_held(KEY.LEFT)){
-
-        }
-
-        if (self.input.was_key_pressed(KEY.JUMP)){
-            
-        }
-
-        self.input.begin_new_frame();
-
-        self.sprite_right.update(time);
-        self.sprite_left.update(time);
-    }
-
-    this.draw = function() {
-        self.sprite_right.draw(self.context,64,64);
-        self.sprite_left.draw(self.context,128,64);
-    }
-
-    this.clear = function(){
-        self.context.clearRect(
-            0,0,self.canvas.width,self.canvas.height);
-    }
 
 }
 
 
+Core.prototype.initialize = function() {
+
+    this.sprite = new Sprite();
+    this.sprite.init_img('img/ambig-right.png',MediaManager);
+    this.sprite.init_coord_frames([
+        new Vec2D(4,0),
+        new Vec2D(5,0),
+        new Vec2D(6,0),
+        new Vec2D(7,0),
+        new Vec2D(0,1),
+        new Vec2D(1,1),
+        new Vec2D(2,1),
+        new Vec2D(3,1)
+    ],64,64);
+
+    var self = this;
+    setInterval(function() {
+        self.update(50);
+        self.clear();
+        self.draw();
+    },MSEC_PER_FRAME);
+
+    //this.set_keys({
+    //    'left':21,
+    //    'right':22,
+    //    'up':23,
+    //    'down':24
+    //});
+
+    var player = new Player(Quadrangle);
+    player.print();
+
+}
+
+
+Core.prototype.set_keys = function(action,exch) {
+    
+    var keys = Object.keys(exch);
+    
+}
+
+
+Core.prototype.update = function(time) {
+
+    if (this.input.is_key_held(KEY.RIGHT) && this.input.is_key_held(KEY.LEFT)) {
+
+    }
+    else if (this.input.is_key_held(KEY.RIGHT)) {
+        console.log('right');
+    }
+    else if (this.input.is_key_held(KEY.LEFT)){
+        console.log('left');
+    }
+    else if (!this.input.is_key_held(KEY.RIGHT) && !this.input.is_key_held(KEY.LEFT)){
+
+    }
+
+    if (this.input.was_key_pressed(KEY.SPACE)){
+        
+    }
+
+    this.input.begin_new_frame();
+
+    this.sprite.update(time);
+
+}
+
+
+Core.prototype.draw = function() {
+    this.sprite.draw(this.context,64,64);
+}
+
+
+Core.prototype.clear = function() {
+    this.context.clearRect(
+        0,0,this.canvas.width,this.canvas.height);
+}
+
+
+
 function run() {
     var core = new Core;
-    core.clear();
     core.initialize();
 }
 

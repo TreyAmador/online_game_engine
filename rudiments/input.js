@@ -7,6 +7,7 @@ function Input() {
     this.pressed_keys = {};
     this.released_keys = {};
     this.timer = new Date();
+    this.init();
 }
 
 
@@ -44,6 +45,7 @@ Input.prototype.is_key_held = function(key) {
 
 
 Input.prototype.init = function() {
+
     var self = this;
     window.addEventListener('keyup',function(event) { 
         self.key_up_event(event); 
@@ -52,6 +54,7 @@ Input.prototype.init = function() {
     window.addEventListener('keydown',function(event) {
         self.key_down_event(event);
     },false);
+
 }
 
 

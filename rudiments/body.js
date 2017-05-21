@@ -2,6 +2,9 @@
 
 
 
+
+/*
+
 function inherits_from(BaseClass,SuperClass,x,y,z) {
     BaseClass.prototype = new SuperClass();
     BaseClass.prototype.constructor = SuperClass;
@@ -56,8 +59,6 @@ Character.prototype.print = function() {
     Body.prototype.print.call(this);
 }
 
-
-//var character = new Character();
-//character.print();
+*/
 
 
