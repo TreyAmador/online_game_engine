@@ -106,6 +106,11 @@ Sprite.prototype.clear_frames = function() {
 }
 
 
+Sprite.prototype.get_img = function() {
+    return this.img;
+}
+
+
 // could also pass in function that is executed
 // with each iteration...?
 // could be different for different frames, for example
