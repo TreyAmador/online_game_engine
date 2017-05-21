@@ -132,10 +132,6 @@ Player.prototype.update = function(elapsed_time) {
 
 
 
-
-
-
-
 /*
 
 // example of how to inheritance chains
@@ -189,8 +185,6 @@ sub.sub_sub_func();
 */
 
 
-
-
 // example of how to inheritance chains
 //function inherit_func(SuperClass,SubClass) {
 //    SubClass.prototype = new SuperClass();
@@ -200,6 +194,9 @@ sub.sub_sub_func();
 
 
 
+/*
+
+// an example of weird inheritance
 
 function inherit_func(SuperClass,SubClass) {
 
@@ -230,13 +227,10 @@ function inherit_func(SuperClass,SubClass) {
     SubClass.prototype.constructor = SubClass;
     SuperClass.call(SubClass);
 
-    
     console.log('\n');
     console.log('\n');
 
 }
-
-
 
 function SuperClass() {
     this.super_var = 'super var';
@@ -257,8 +251,6 @@ SubClass.prototype.sub_func = function() {
     console.log(this.super_var,'sub_func');
 }
 
-
-
 function SubSubClass() {
     this.sub_sub_var = 'sub sub var';
 }
@@ -269,10 +261,59 @@ SubSubClass.prototype.sub_sub_func = function() {
 
 }
 
-
 var sub = new SubClass();
 //console.log('super func to be called');
 //sub.super_func();
 //sub.sub_func();
 //console.log('Sub prototype',sub);
+
+*/
+
+
+
+/*
+
+function inherit_iter(SuperClass,BaseClass) {
+
+}
+
+var SuperClass = {
+    x:null,y:null,w:null,h:null,
+    set_vars:function(x,y,w,h) {
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+    },
+    super_func:function() {
+        console.log('inside the super_func');
+    },
+    get_vars:function() {
+        console.log(this.x,this.y,this.w,this.h);
+    }
+};
+
+function BaseClass() {
+    for (var i in SuperClass) {
+        this[i] = SuperClass[i];
+    }
+}
+
+BaseClass.prototype.sub_class = function() {
+    console.log('from inside sub_class');
+}
+
+var base_class = new BaseClass();
+base_class.set_vars(1,2,3,4);
+base_class.super_func();
+base_class.get_vars();
+base_class.sub_class();
+
+
+var base_class_next = new BaseClass();
+base_class_next.set_vars(5,6,7,8);
+base_class_next.get_vars();
+base_class_next.sub_class();
+
+*/
 
