@@ -1,6 +1,7 @@
 // a camera class which puts everything to the screen
 
 
+
 function Camera(x,y,w,h) {
 
     // is there any real need for an x and y?
@@ -11,14 +12,29 @@ function Camera(x,y,w,h) {
     this.canvas.width = w;
     this.canvas.height = h;
     this.context = this.canvas.getContext('2d');
-    document.body.appendChild(this.canvas);
+    
+    var game_port = document.getElementById('game-port');
+    game_port.textContent = '';
+    game_port.appendChild(this.canvas);
 
 }
 
 
-Camera.prototype.capture = function(body,x,y) {
-    // calculate offset here
-    body.sprite.draw(this.context,x,y);
+Camera.prototype.capture = function(body) {
+
+
+    // it would be better to do something like this
+    // return current body sprite
+
+    //var rect = body.sprite.area();
+    //this.context.drawImage(body.sprite.img,
+    //    rect.x,rect.y,rect.w,rect.h,
+    //    body.x,body.y,rect.w,rect.h);
+
+
+    // calculate offset of objects here
+    body.draw(this.context,body.x,body.y);
+
 }
 
 
@@ -28,7 +44,7 @@ Camera.prototype.recalibrate = function() {
 }
 
 
-Camera.prototype.adjust = function() {
+Camera.prototype.adjust_offset = function() {
 
 }
 

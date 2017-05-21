@@ -11,6 +11,11 @@ var KEY = Object({
 });
 
 
+var PLAYERSTATE = Object.freeze({
+    RIGHT_RUN:0
+});
+
+
 
 const MSEC_PER_SEC = 1000;
 const FRAME_PER_SEC = 15;   // this doesn't seem to work?
@@ -27,10 +32,15 @@ function Core() {
 Core.prototype.initialize = function() {
 
     this.player = new Player(Quadrangle);
+    this.player.set_state(PLAYERSTATE.RIGHT_RUN);
     this.player.add_coord_sprite('img/ambig-right.png',[
         new Vec2D(4,0), new Vec2D(5,0),new Vec2D(6,0), new Vec2D(7,0),
         new Vec2D(0,1), new Vec2D(1,1),new Vec2D(2,1), new Vec2D(3,1)
-        ],64,64);
+        ],64,64,PLAYERSTATE.RIGHT_RUN);
+    
+
+    this.player.set_spatiality(128,256,64,64);
+
 
 
     var self = this;
@@ -81,7 +91,7 @@ Core.prototype.update = function(elapsed_time) {
 
 Core.prototype.draw = function() {
     this.camera.recalibrate();
-    this.camera.capture(this.player,32,32);
+    this.camera.capture(this.player);
 }
 
 
