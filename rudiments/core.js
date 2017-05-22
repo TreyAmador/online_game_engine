@@ -33,27 +33,31 @@ function Core() {
 
 Core.prototype.initialize = function() {
 
-    this.player = new Player(Quadrangle);
+    this.player = new Player(RectSkeleton);
+    this.player.set_spatiality(128,256,64,64);
     this.player.set_state(PLAYERSTATE.RIGHT_STILL);
+
 
     this.player.add_coord_sprite('img/ambig-right.png',[
         new Vec2D(0,0), new Vec2D(1,0), new Vec2D(2,0), new Vec2D(3,0),
         new Vec2D(3,0), new Vec2D(2,0), new Vec2D(1,0), new Vec2D(0,0)
         ],64,64,PLAYERSTATE.RIGHT_STILL);
+    this.player.add_skeleton_offset(25,25,10,0,PLAYERSTATE.RIGHT_STILL);
+    
 
     this.player.add_coord_sprite('img/ambig-right.png',[
-        new Vec2D(0,4), new Vec2D(1,4),new Vec2D(2,4), new Vec2D(3,4),
-        new Vec2D(4,4), new Vec2D(5,4),new Vec2D(6,4), new Vec2D(7,4)
+        new Vec2D(0,4), new Vec2D(1,4), new Vec2D(2,4), new Vec2D(3,4),
+        new Vec2D(4,4), new Vec2D(5,4), new Vec2D(6,4), new Vec2D(7,4)
         ],64,64,PLAYERSTATE.RIGHT_WALK);
 
-
     this.player.add_coord_sprite('img/ambig-right.png',[
-        new Vec2D(4,0), new Vec2D(5,0),new Vec2D(6,0), new Vec2D(7,0),
-        new Vec2D(0,1), new Vec2D(1,1),new Vec2D(2,1), new Vec2D(3,1)
+        new Vec2D(4,0), new Vec2D(5,0), new Vec2D(6,0), new Vec2D(7,0),
+        new Vec2D(0,1), new Vec2D(1,1), new Vec2D(2,1), new Vec2D(3,1)
         ],64,64,PLAYERSTATE.RIGHT_RUN);
     
-    this.player.set_spatiality(128,256,64,64);
 
+
+    //this.player.init_skeleton_offset(25,25,10,0);
 
     var self = this;
     setInterval(function() {

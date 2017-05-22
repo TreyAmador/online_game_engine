@@ -35,6 +35,7 @@ Camera.prototype.capture = function(body) {
     // calculate offset of objects here
     // body.x - offset.x, body.y - offset.y
     body.draw(this.context,body.x,body.y);
+    body.draw_skeleton(this.context);
 
 }
 

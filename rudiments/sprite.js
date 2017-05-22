@@ -106,11 +106,6 @@ Sprite.prototype.clear_frames = function() {
 }
 
 
-//Sprite.prototype.get_img = function() {
-//    return this.img;
-//}
-
-
 // could also pass in function that is executed
 // with each iteration...?
 // could be different for different frames, for example
@@ -118,11 +113,6 @@ Sprite.prototype.update = function(time,func) {
     if (this.timer.frames_elapsed())
         this.frame_no = ++this.frame_no % this.frames.length;
 }
-
-
-//Sprite.prototype.area = function() {
-//    return this.frames[this.frame_no];
-//}
 
 
 Sprite.prototype.draw = function(context,x,y) {
