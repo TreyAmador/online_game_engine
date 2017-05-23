@@ -1,7 +1,7 @@
 /*  */
 
 
-var TIME_INTERVAL = 50;
+var TIME_INTERVAL = 15;
 var CANVAS_WIDTH = 640;
 var CANVAS_HEIGHT = 480;
 
@@ -151,8 +151,17 @@ function Body(x,y,w,h) {
 
 
 function Player(x,y,w,h) {
+    
     this.invincible = false;
     this.in_motion = false;
+
+    this.x = x;
+    this.y = y;
+    
+    this.vx = 0;
+    this.vy = 0;
+    this.ax = 0;
+    this.ay = 0;
 
     this.rect = new Rectangle(x,y,w,h);
 }
@@ -164,13 +173,45 @@ Player.prototype.init_sprite = function(filepath,x,y,w,h) {
 }
 
 
-Player.prototype.update = function(elapsed_time) {
+Player.prototype.move_up = function() {
+    this.vy = -1;
+}
+
+
+Player.prototype.move_right = function() {
+    this.vx = 1;
+}
+
+
+Player.prototype.move_left = function() {
+    this.vx = -1;
+}
+
+
+Player.prototype.move_down = function() {
+    this.vy = 1;
+}
+
+
+Player.prototype.stop_moving_horizontally = function() {
+    this.vx = 0;
+}
+
+
+Player.prototype.stop_moving_vertically = function() {
+    this.vy = 0;
 
 }
 
 
+Player.prototype.update = function(elapsed_time) {
+    this.x = this.vx * elapsed_time;
+    this.y = this.vy * elapsed_time;
+}
+
+
 Player.prototype.draw = function(context) {
-    this.sprite.draw(context,this.rect.x,this.rect.y);
+    this.sprite.draw(context,this.x,this.y);
 }
 
 
@@ -180,8 +221,8 @@ var Core = {
     init: function() {
         
         this.canvas = document.createElement('canvas');
-        this.canvas.width = CANVAS_WIDTH;
-        this.canvas.height = CANVAS_HEIGHT;
+        this.canvas.width = 640;
+        this.canvas.height = 480;
         this.context = this.canvas.getContext('2d');
         
         var game_port = document.getElementById('game-port');
@@ -195,9 +236,6 @@ var Core = {
         this.player.init_sprite('img/flashtestship_0.png',0,0,180,275);
 
 
-        //this.sprite = new Sprite(0,0,180,275);
-        //this.sprite.init('img/flashtestship_0.png',MediaManager);
-
         var self = this;
         setInterval(function(){
             self.update(TIME_INTERVAL);
@@ -207,9 +245,31 @@ var Core = {
 
     },
 
-    update: function() {
+    update: function(elapsed_time) {
         //update sprite
 
+        if (this.input.is_key_held(KEY.RIGHT) && this.input.is_key_held(KEY.LEFT)) {
+            this.player.stop_moving_horizontally();
+        }
+        else if (this.input.is_key_held(KEY.RIGHT)) {
+            this.player.move_right();
+        }
+        else if (this.input.is_key_held(KEY.LEFT)){
+            this.player.move_left();
+        }
+        else if (!this.input.is_key_held(KEY.RIGHT) && !this.input.is_key_held(KEY.LEFT)){
+            this.player.stop_moving_horizontally();
+        }
+
+        
+
+        if (this.input.was_key_pressed(KEY.SPACE)){
+            console.log('fire!');
+        }
+
+        this.player.update(elapsed_time);
+
+        this.input.begin_new_frame();
 
     },
 
@@ -219,14 +279,12 @@ var Core = {
 
     draw: function() {
         this.clear();
-        //this.sprite.draw(this.context,0,0);
         this.player.draw(this.context);
     },
 
     clear: function() {
         this.context.clearRect(0,0,
-        this.context.width,
-        this.context.height);
+        this.canvas.width,this.canvas.height);
     }
 
 
