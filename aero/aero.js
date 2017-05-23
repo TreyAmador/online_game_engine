@@ -87,10 +87,10 @@ function Rectangle(x,y,w,h) {
 }
 
 
-
 function Sprite(x,y,w,h) {
     this.body = new Rectangle(x,y,w,h);
-    this.sizing = 1;
+    this.size_height = 1;
+    this.size_width = 1;
 }
 
 
@@ -100,17 +100,32 @@ Sprite.prototype.init = function(filepath,manager) {
 
 
 Sprite.prototype.shrink_width = function(factor) {
-    
+    this.size_width = 1 / factor;
 }
 
 
 Sprite.prototype.shrink_height = function(factor) {
-
+    this.size_height = 1 / factor;
 }
 
 
 Sprite.prototype.shrink = function(factor) {
+    this.size_width = this.size_height = 1 / factor;
+}
 
+
+Sprite.prototype.enlarge_width = function(factor) {
+    this.size_width = factor;
+}
+
+
+Sprite.prototype.enlarge_height = function(factor) {
+    this.size_height = factor;
+}
+
+
+Sprite.prototype.enlarge = function(factor) {
+    this.size_width = this.size_height = factor;
 }
 
 
@@ -121,8 +136,10 @@ Sprite.prototype.update = function(elapsed_time) {
 
 Sprite.prototype.draw = function(context,x,y) {
     context.drawImage(this.img,
-        this.body.x,this.body.y,this.body.w,this.body.h,
-        x,y,this.body.w/this.sizing,this.body.h/this.sizing);
+        this.body.x,this.body.y,
+        this.body.w,this.body.h,x,y,
+        this.size_width*this.body.w,
+        this.size_height*this.body.h);
 }
 
 
@@ -132,6 +149,29 @@ function Body(x,y,w,h) {
 }
 
 
+
+function Player(x,y,w,h) {
+    this.invincible = false;
+    this.in_motion = false;
+
+    this.rect = new Rectangle(x,y,w,h);
+}
+
+
+Player.prototype.init_sprite = function(filepath,x,y,w,h) {
+    this.sprite = new Sprite(x,y,w,h);
+    this.sprite.init('img/flashtestship_0.png',MediaManager);
+}
+
+
+Player.prototype.update = function(elapsed_time) {
+
+}
+
+
+Player.prototype.draw = function(context) {
+    this.sprite.draw(context,this.rect.x,this.rect.y);
+}
 
 
 
@@ -150,8 +190,13 @@ var Core = {
 
         this.input = new Input();
 
-        this.sprite = new Sprite(0,0,180,275);
-        this.sprite.init('img/flashtestship_0.png',MediaManager);
+
+        this.player = new Player(0,0,180,275);
+        this.player.init_sprite('img/flashtestship_0.png',0,0,180,275);
+
+
+        //this.sprite = new Sprite(0,0,180,275);
+        //this.sprite.init('img/flashtestship_0.png',MediaManager);
 
         var self = this;
         setInterval(function(){
@@ -165,6 +210,7 @@ var Core = {
     update: function() {
         //update sprite
 
+
     },
 
     handle_input: function() {
@@ -173,7 +219,8 @@ var Core = {
 
     draw: function() {
         this.clear();
-        this.sprite.draw(this.context,0,0);
+        //this.sprite.draw(this.context,0,0);
+        this.player.draw(this.context);
     },
 
     clear: function() {
