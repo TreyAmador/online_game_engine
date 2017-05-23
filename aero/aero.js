@@ -6,12 +6,30 @@ var CANVAS_WIDTH = 640;
 var CANVAS_HEIGHT = 480;
 
 
+var ACCEL_FORWARD = 0.02;
+var ACCEL_LEFT = 0.01;
+var ACCEL_RIGHT = 0.01;
+var ACCEL_BACK = 0.001;
+
+
 var KEY = Object({
     UP:38,
     DOWN:40,
     RIGHT:39,
     LEFT:37,
     SPACE:32
+});
+
+
+// corresponds to action strings
+// enemeis do action here
+// ex.  fly in certain direction
+//      fly towards player
+//      fire missle somewhere
+//      fire missle at player
+//      rotate in player's direction
+var ENEMY_ACTIONS = Object({
+
 });
 
 
@@ -129,6 +147,7 @@ Sprite.prototype.enlarge = function(factor) {
 }
 
 
+// update should probably go with player?
 Sprite.prototype.update = function(elapsed_time) {
 
 }
@@ -150,6 +169,15 @@ function Body(x,y,w,h) {
 
 
 
+function Enemy(x,y,w,h) {
+    // TODO give certain enemies action_string
+    // a string representing a sequence of actions
+    // to preform... gives illusion of AI
+    this.action_string = 'abcdefg';
+}
+
+
+
 function Player(x,y,w,h) {
     
     this.invincible = false;
@@ -160,10 +188,13 @@ function Player(x,y,w,h) {
     
     this.vx = 0;
     this.vy = 0;
+
     this.ax = 0;
     this.ay = 0;
 
+    // represents collision skeleton
     this.rect = new Rectangle(x,y,w,h);
+
 }
 
 
@@ -174,22 +205,22 @@ Player.prototype.init_sprite = function(filepath,x,y,w,h) {
 
 
 Player.prototype.move_up = function() {
-    this.vy = -1;
-}
-
-
-Player.prototype.move_right = function() {
-    this.vx = 1;
-}
-
-
-Player.prototype.move_left = function() {
-    this.vx = -1;
+    this.vy = -0.1;
 }
 
 
 Player.prototype.move_down = function() {
-    this.vy = 1;
+    this.vy = 0.1;
+}
+
+
+Player.prototype.move_right = function() {
+    this.vx = 0.1;
+}
+
+
+Player.prototype.move_left = function() {
+    this.vx = -0.1;
 }
 
 
@@ -205,8 +236,8 @@ Player.prototype.stop_moving_vertically = function() {
 
 
 Player.prototype.update = function(elapsed_time) {
-    this.x = this.vx * elapsed_time;
-    this.y = this.vy * elapsed_time;
+    this.x += this.vx * elapsed_time;
+    this.y += this.vy * elapsed_time;
 }
 
 
@@ -261,7 +292,18 @@ var Core = {
             this.player.stop_moving_horizontally();
         }
 
-        
+        if (this.input.is_key_held(KEY.UP) && this.input.is_key_held(KEY.DOWN)) {
+            this.player.stop_moving_vertically();
+        }
+        else if (this.input.is_key_held(KEY.UP)) {
+            this.player.move_up();
+        }
+        else if (this.input.is_key_held(KEY.DOWN)){
+            this.player.move_down();
+        }
+        else if (!this.input.is_key_held(KEY.UP) && !this.input.is_key_held(KEY.DOWN)){
+            this.player.stop_moving_vertically();
+        }
 
         if (this.input.was_key_pressed(KEY.SPACE)){
             console.log('fire!');
