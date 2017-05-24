@@ -1,15 +1,28 @@
 /*  */
 
 
-var TIME_INTERVAL = 15;
+var MSEC_PER_SEC = 1000;
+var FRAMES_PER_SEC = 30;
+var TIME_INTERVAL = MSEC_PER_SEC / FRAMES_PER_SEC;
 var CANVAS_WIDTH = 640;
 var CANVAS_HEIGHT = 480;
 
 
-var ACCEL_FORWARD = 0.02;
-var ACCEL_LEFT = 0.01;
-var ACCEL_RIGHT = 0.01;
-var ACCEL_BACK = 0.001;
+// there should be vectors of accel and vel
+// where the magnitude is capped at max value
+// not each individual var
+var ACCEL_FORWARD = -0.002;
+var ACCEL_LEFT = -0.002;
+var ACCEL_RIGHT = 0.002
+var ACCEL_BACK = 0.002;
+var ACCEL_STOP = 0.0;
+
+var MAX_VEL_FORWARD = -0.2;
+var MAX_VEL_LEFT = -0.2;
+var MAX_VEL_RIGHT = 0.2;
+var MAX_VEL_REVERSE = 0.2;
+
+var FRICTION = 0.7;
 
 
 var KEY = Object({
@@ -97,6 +110,48 @@ var MediaManager = {
 
 
 
+function Vec2D(x,y) {
+    this.x = x;
+    this.y = y;
+}
+
+
+Vec2D.prototype.magnitude = function() {
+    return Math.sqrt(
+        this.x * this.x +
+        this.y * this.y);
+}
+
+
+// TODO test this the radians and degrees functions
+Vec2D.prototype.radians = function() {
+    return Math.atan2(this.y/this.x);
+}
+
+
+Vec2D.prototype.degrees = function() {
+    return Math.atan(this.y/this.x);
+}
+
+
+// TODO add more physics!
+var Physics = {
+
+    velocity_delta: function(a,v,t) {
+        return a*t + v;
+    },
+
+    kinematics: function(a,v,x,t) {
+        return (a/2)*t*t + v*t + x;
+    },
+
+    friction: function(f,x) {
+        return f*x;
+    },
+
+};
+
+
 function Rectangle(x,y,w,h) {
     this.x = x;
     this.y = y;
@@ -148,6 +203,7 @@ Sprite.prototype.enlarge = function(factor) {
 
 
 // update should probably go with player?
+// there will be some sprite update stuff
 Sprite.prototype.update = function(elapsed_time) {
 
 }
@@ -183,6 +239,8 @@ function Player(x,y,w,h) {
     this.invincible = false;
     this.in_motion = false;
 
+    // TODO these should all be vectors
+    //      of accel, vel, maybe x be pos
     this.x = x;
     this.y = y;
     
@@ -200,44 +258,70 @@ function Player(x,y,w,h) {
 
 Player.prototype.init_sprite = function(filepath,x,y,w,h) {
     this.sprite = new Sprite(x,y,w,h);
-    this.sprite.init('img/flashtestship_0.png',MediaManager);
+    this.sprite.init(filepath,MediaManager);
 }
 
 
 Player.prototype.move_up = function() {
-    this.vy = -0.1;
+    this.ay = ACCEL_FORWARD;
+
 }
 
 
 Player.prototype.move_down = function() {
-    this.vy = 0.1;
+    this.ay = ACCEL_BACK;
 }
 
 
 Player.prototype.move_right = function() {
-    this.vx = 0.1;
+    this.ax = ACCEL_RIGHT;
 }
 
 
 Player.prototype.move_left = function() {
-    this.vx = -0.1;
+    //this.vx = -0.1;
+
+    this.ax = ACCEL_LEFT;
+
 }
 
 
 Player.prototype.stop_moving_horizontally = function() {
-    this.vx = 0;
+    //this.vx = 0;
+
+    this.ax = ACCEL_STOP;
+
 }
 
 
 Player.prototype.stop_moving_vertically = function() {
-    this.vy = 0;
-
+    this.ay = ACCEL_STOP;
 }
 
 
 Player.prototype.update = function(elapsed_time) {
-    this.x += this.vx * elapsed_time;
-    this.y += this.vy * elapsed_time;
+
+    // set velocity between threshold
+    this.vx = Physics.velocity_delta(this.ax,this.vx,elapsed_time);
+    if (this.vx < MAX_VEL_LEFT) {
+        this.vx = MAX_VEL_LEFT;
+    }
+    else if (this.vx > MAX_VEL_RIGHT) {
+        this.vx = MAX_VEL_RIGHT;
+    }
+    this.x = Physics.kinematics(this.ax,this.vx,this.x,elapsed_time);
+    this.vx = Physics.friction(FRICTION,this.vx);
+
+    this.vy = Physics.velocity_delta(this.ay,this.vy,elapsed_time);
+    if (this.vy < MAX_VEL_FORWARD) {
+        this.vy = MAX_VEL_FORWARD;
+    }
+    else if (this.vy > MAX_VEL_REVERSE){
+        this.vy = MAX_VEL_REVERSE;
+    }
+    this.y = Physics.kinematics(this.ay,this.vy,this.y,elapsed_time);
+    this.vy = Physics.friction(FRICTION,this.vy);
+
 }
 
 
@@ -262,10 +346,10 @@ var Core = {
 
         this.input = new Input();
 
-
         this.player = new Player(0,0,180,275);
-        this.player.init_sprite('img/flashtestship_0.png',0,0,180,275);
+        this.player.init_sprite('img/spiked ship 3. small.blue_.PNG',0,0,150,120);
 
+        // TODO add a filereader that inputs xml files for level loading
 
         var self = this;
         setInterval(function(){
@@ -278,6 +362,16 @@ var Core = {
 
     update: function(elapsed_time) {
         //update sprite
+
+        
+
+        this.player.update(elapsed_time);
+
+        this.input.begin_new_frame();
+
+    },
+
+    handle_input: function() {
 
         if (this.input.is_key_held(KEY.RIGHT) && this.input.is_key_held(KEY.LEFT)) {
             this.player.stop_moving_horizontally();
@@ -308,15 +402,6 @@ var Core = {
         if (this.input.was_key_pressed(KEY.SPACE)){
             console.log('fire!');
         }
-
-        this.player.update(elapsed_time);
-
-        this.input.begin_new_frame();
-
-    },
-
-    handle_input: function() {
-
     },
 
     draw: function() {
