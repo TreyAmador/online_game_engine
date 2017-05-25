@@ -22,6 +22,8 @@ var MAX_VEL_LEFT = -0.2;
 var MAX_VEL_RIGHT = 0.2;
 var MAX_VEL_REVERSE = 0.2;
 
+var MAX_VEL_MAG = 0.2;
+
 var FRICTION = 0.7;
 
 
@@ -123,6 +125,14 @@ Vec2D.prototype.magnitude = function() {
 }
 
 
+Vec2D.prototype.normalize = function(factor) {
+    var magnitude = this.magnitude();
+    factor /= magnitude;
+    this.x *= factor;
+    this.y *= factor;
+}
+
+
 // TODO test this the radians and degrees functions
 Vec2D.prototype.radians = function() {
     return Math.atan2(this.y/this.x);
@@ -148,6 +158,7 @@ var Physics = {
     friction: function(f,x) {
         return f*x;
     },
+
 
 };
 
@@ -209,6 +220,7 @@ Sprite.prototype.update = function(elapsed_time) {
 }
 
 
+// pass different functions for src and dest dimensions
 Sprite.prototype.draw = function(context,x,y) {
     context.drawImage(this.img,
         this.body.x,this.body.y,
@@ -216,6 +228,46 @@ Sprite.prototype.draw = function(context,x,y) {
         this.size_width*this.body.w,
         this.size_height*this.body.h);
 }
+
+
+
+function Background(x,y,w,h) {
+    this.rect = new Rectangle(x,y,w,h);
+    this.scroll = new Vec2D(0,0);
+}
+
+
+Background.prototype.set_size = function(w,h) {
+    this.rect.w = w;
+    this.rect.h = h;
+}
+
+
+Background.prototype.init_img = function(filepath,manager) {
+    this.img = new Image();
+    this.img.src = manager.load(filepath);
+}
+
+
+Background.prototype.scroll_speed = function(x,y) {
+    this.scroll.x = x;
+    this.scroll.y = y;
+}
+
+
+Background.prototype.update = function(elapsed_time) {
+    this.rect.x += this.scroll.x * elapsed_time;
+    this.rect.y += this.scroll.y * elapsed_time;
+}
+
+
+Background.prototype.draw = function(context,canvas) {
+    context.drawImage(this.img,
+        this.rect.x,this.rect.y,
+        this.rect.w,this.rect.h,
+        0,0,canvas.width,canvas.height);
+}
+
 
 
 // TODO modify this to be a player superclass
@@ -250,6 +302,11 @@ function Player(x,y,w,h) {
     this.ax = 0;
     this.ay = 0;
 
+
+    this.vel = new Vec2D(0,0);
+    this.accel = new Vec2D(0,0);
+
+
     // represents collision skeleton
     this.rect = new Rectangle(x,y,w,h);
 
@@ -279,16 +336,12 @@ Player.prototype.move_right = function() {
 
 
 Player.prototype.move_left = function() {
-    //this.vx = -0.1;
-
     this.ax = ACCEL_LEFT;
 
 }
 
 
 Player.prototype.stop_moving_horizontally = function() {
-    //this.vx = 0;
-
     this.ax = ACCEL_STOP;
 
 }
@@ -301,6 +354,7 @@ Player.prototype.stop_moving_vertically = function() {
 
 Player.prototype.update = function(elapsed_time) {
 
+    /*
     // set velocity between threshold
     this.vx = Physics.velocity_delta(this.ax,this.vx,elapsed_time);
     if (this.vx < MAX_VEL_LEFT) {
@@ -321,6 +375,22 @@ Player.prototype.update = function(elapsed_time) {
     }
     this.y = Physics.kinematics(this.ay,this.vy,this.y,elapsed_time);
     this.vy = Physics.friction(FRICTION,this.vy);
+    */
+    
+
+
+    this.vel.x = Physics.velocity_delta(this.ax,this.vel.x,elapsed_time);
+    this.vel.y = Physics.velocity_delta(this.ay,this.vel.y,elapsed_time);
+
+    if (this.vel.magnitude() > MAX_VEL_MAG)
+        this.vel.normalize(MAX_VEL_MAG);
+
+    this.x = Physics.kinematics(this.ax,this.vel.x,this.x,elapsed_time);
+    this.y = Physics.kinematics(this.ay,this.vel.y,this.y,elapsed_time);
+
+    this.vel.x = Physics.friction(FRICTION,this.vel.x);
+    this.vel.y = Physics.friction(FRICTION,this.vel.y);
+
 
 }
 
@@ -349,6 +419,9 @@ var Core = {
         this.player = new Player(0,0,180,275);
         this.player.init_sprite('img/spiked ship 3. small.blue_.PNG',0,0,150,120);
 
+        //this.background = new Background(0,0,this.canvas.width,this.canvas.height);
+        //this.background.init_img('img/level1Background (1).png',MediaManager);
+
         // TODO add a filereader that inputs xml files for level loading
 
         var self = this;
@@ -363,9 +436,8 @@ var Core = {
     update: function(elapsed_time) {
         //update sprite
 
-        
-
         this.player.update(elapsed_time);
+        //this.background.update();
 
         this.input.begin_new_frame();
 
@@ -392,14 +464,14 @@ var Core = {
         else if (this.input.is_key_held(KEY.UP)) {
             this.player.move_up();
         }
-        else if (this.input.is_key_held(KEY.DOWN)){
+        else if (this.input.is_key_held(KEY.DOWN)) {
             this.player.move_down();
         }
-        else if (!this.input.is_key_held(KEY.UP) && !this.input.is_key_held(KEY.DOWN)){
+        else if (!this.input.is_key_held(KEY.UP) && !this.input.is_key_held(KEY.DOWN)) {
             this.player.stop_moving_vertically();
         }
 
-        if (this.input.was_key_pressed(KEY.SPACE)){
+        if (this.input.was_key_pressed(KEY.SPACE)) {
             console.log('fire!');
         }
     },
@@ -407,6 +479,7 @@ var Core = {
     draw: function() {
         this.clear();
         this.player.draw(this.context);
+        //this.background.draw(this.context,this.canvas);
     },
 
     clear: function() {
