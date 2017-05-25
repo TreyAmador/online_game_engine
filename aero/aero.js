@@ -269,6 +269,8 @@ function Background(x,y) {
     this.vel = new Vec2D(0,0);
     this.pos = new Pos2D(x,y);
 
+    this.spatiality = new Rectangle(0,0,0,0);
+
     this.loop = false;
 
 
@@ -317,7 +319,11 @@ Background.prototype.update = function(elapsed_time) {
     //this.rect.x += this.scroll.x * elapsed_time;
     //this.rect.y += this.scroll.y * elapsed_time;
 
-    // determine if there is a need to move sprite no here
+    
+    this.pos.x += this.vel.x * elapsed_time;
+    this.pos.y += this.vel.y * elapsed_time;
+
+
 }
 
 
@@ -459,11 +465,16 @@ var Core = {
         this.player.init_sprite('img/ship3 (3).png',0,0,104,81);
         this.player.init_collision(0,0,104,81);
 
-        this.background = new Background(0,0);
+        //var map_rect = new Rectangle(0,0,2880,5120);
+        this.background = new Background(-1200,this.canvas.height-5120);
+        this.background.set_spatiality(0,0,2880,5120);
         this.background.add_sprite(0,0,
-            this.canvas.width,this.canvas.height,
-            'img/carina-nebulae.jpg');
-
+            this.background.spatiality.w,
+            this.background.spatiality.h,
+            'img/carina-nebulae-ref.png');
+        
+        this.background.set_scroll_speed(0,0.01);
+        
         
         // TODO add a filereader that inputs xml files for level loading
         //      including enemy placement and landmarks
@@ -480,6 +491,7 @@ var Core = {
 
     update: function(elapsed_time) {
         this.player.update(elapsed_time);
+        this.background.update(elapsed_time);
         this.input.begin_new_frame();
 
     },
