@@ -112,6 +112,12 @@ var MediaManager = {
 
 
 
+function Pos2D(x,y) {
+    this.x = x;
+    this.y = y;
+}
+
+
 function Vec2D(x,y) {
     this.x = x;
     this.y = y;
@@ -151,14 +157,32 @@ var Physics = {
         return a*t + v;
     },
 
+    // pass accel and vel vector to get vel
+    velocity_delta_2d: function(a,v,t) {
+        v.x += (a.x * t);
+        v.y += (a.y * t);
+        return v;
+    },
+
     kinematics: function(a,v,x,t) {
         return (a/2)*t*t + v*t + x;
+    },
+
+    kinematics_2d: function(a,v,p,t) {
+        p.x = ((a.x/2) * t * t + v.x * t + p.x);
+        p.y = ((a.y/2) * t * t + v.y * t + p.y);
+        return p;
     },
 
     friction: function(f,x) {
         return f*x;
     },
 
+    friction_2d: function(f,p) {
+        p.x *= f;
+        p.y *= f;
+        return p;
+    }
 
 };
 
@@ -293,16 +317,11 @@ function Player(x,y,w,h) {
 
     // TODO these should all be vectors
     //      of accel, vel, maybe x be pos
-    this.x = x;
-    this.y = y;
+    //this.x = x;
+    //this.y = y;
     
-    this.vx = 0;
-    this.vy = 0;
 
-    this.ax = 0;
-    this.ay = 0;
-
-
+    this.pos = new Pos2D(x,y);
     this.vel = new Vec2D(0,0);
     this.accel = new Vec2D(0,0);
 
@@ -320,83 +339,76 @@ Player.prototype.init_sprite = function(filepath,x,y,w,h) {
 
 
 Player.prototype.move_up = function() {
-    this.ay = ACCEL_FORWARD;
-
+    this.accel.y = ACCEL_FORWARD;
 }
 
 
 Player.prototype.move_down = function() {
-    this.ay = ACCEL_BACK;
+    this.accel.y = ACCEL_BACK;
 }
 
 
 Player.prototype.move_right = function() {
-    this.ax = ACCEL_RIGHT;
+    this.accel.x = ACCEL_RIGHT;
 }
 
 
 Player.prototype.move_left = function() {
-    this.ax = ACCEL_LEFT;
-
+    this.accel.x = ACCEL_LEFT;
 }
 
 
 Player.prototype.stop_moving_horizontally = function() {
-    this.ax = ACCEL_STOP;
-
+    this.accel.x = ACCEL_STOP;
 }
 
 
 Player.prototype.stop_moving_vertically = function() {
-    this.ay = ACCEL_STOP;
+    this.accel.y = ACCEL_STOP;
 }
 
 
 Player.prototype.update = function(elapsed_time) {
 
     /*
-    // set velocity between threshold
-    this.vx = Physics.velocity_delta(this.ax,this.vx,elapsed_time);
-    if (this.vx < MAX_VEL_LEFT) {
-        this.vx = MAX_VEL_LEFT;
-    }
-    else if (this.vx > MAX_VEL_RIGHT) {
-        this.vx = MAX_VEL_RIGHT;
-    }
-    this.x = Physics.kinematics(this.ax,this.vx,this.x,elapsed_time);
-    this.vx = Physics.friction(FRICTION,this.vx);
-
-    this.vy = Physics.velocity_delta(this.ay,this.vy,elapsed_time);
-    if (this.vy < MAX_VEL_FORWARD) {
-        this.vy = MAX_VEL_FORWARD;
-    }
-    else if (this.vy > MAX_VEL_REVERSE){
-        this.vy = MAX_VEL_REVERSE;
-    }
-    this.y = Physics.kinematics(this.ay,this.vy,this.y,elapsed_time);
-    this.vy = Physics.friction(FRICTION,this.vy);
-    */
-    
-
-
-    this.vel.x = Physics.velocity_delta(this.ax,this.vel.x,elapsed_time);
-    this.vel.y = Physics.velocity_delta(this.ay,this.vel.y,elapsed_time);
+    this.vel.x = Physics.velocity_delta(this.accel.x,this.vel.x,elapsed_time);
+    this.vel.y = Physics.velocity_delta(this.accel.y,this.vel.y,elapsed_time);
 
     if (this.vel.magnitude() > MAX_VEL_MAG)
         this.vel.normalize(MAX_VEL_MAG);
 
-    this.x = Physics.kinematics(this.ax,this.vel.x,this.x,elapsed_time);
-    this.y = Physics.kinematics(this.ay,this.vel.y,this.y,elapsed_time);
+    this.pos.x = Physics.kinematics(this.accel.x,this.vel.x,this.pos.x,elapsed_time);
+    this.pos.y = Physics.kinematics(this.accel.y,this.vel.y,this.pos.y,elapsed_time);
 
     this.vel.x = Physics.friction(FRICTION,this.vel.x);
     this.vel.y = Physics.friction(FRICTION,this.vel.y);
+    */
 
+
+
+    //this.vel.x = Physics.velocity_delta(this.accel.x,this.vel.x,elapsed_time);
+    //this.vel.y = Physics.velocity_delta(this.accel.y,this.vel.y,elapsed_time);
+
+    this.vel = Physics.velocity_delta_2d(this.accel,this.vel,elapsed_time);
+
+    if (this.vel.magnitude() > MAX_VEL_MAG)
+        this.vel.normalize(MAX_VEL_MAG);
+
+    //this.pos.x = Physics.kinematics(this.accel.x,this.vel.x,this.pos.x,elapsed_time);
+    //this.pos.y = Physics.kinematics(this.accel.y,this.vel.y,this.pos.y,elapsed_time);
+
+    this.pos = Physics.kinematics_2d(this.accel,this.vel,this.pos,elapsed_time);
+
+    //this.vel.x = Physics.friction(FRICTION,this.vel.x);
+    //this.vel.y = Physics.friction(FRICTION,this.vel.y);
+
+    this.vel = Physics.friction_2d(FRICTION,this.vel);
 
 }
 
 
 Player.prototype.draw = function(context) {
-    this.sprite.draw(context,this.x,this.y);
+    this.sprite.draw(context,this.pos.x,this.pos.y);
 }
 
 
