@@ -255,41 +255,87 @@ Sprite.prototype.draw = function(context,x,y) {
 
 
 
-function Background(x,y,w,h) {
-    this.rect = new Rectangle(x,y,w,h);
-    this.scroll = new Vec2D(0,0);
+function Background(x,y) {
+    //this.rect = new Rectangle(x,y,w,h);
+    //this.scroll = new Vec2D(0,0);
+
+
+    // TODO add vel,acc vector to background
+    //      this allow dynamic map movement
+
+
+    this.sprites = [];
+    this.sprite_no = 0;
+    this.vel = new Vec2D(0,0);
+    this.pos = new Pos2D(x,y);
+
+    this.loop = false;
+
+
+}
+
+
+Background.prototype.set_spatiality = function(x,y,w,h) {
+    this.spatiality = new Rectangle(x,y,w,h);
 }
 
 
 Background.prototype.set_size = function(w,h) {
-    this.rect.w = w;
-    this.rect.h = h;
+    //this.rect.w = w;
+    //this.rect.h = h;
 }
 
 
+// TODO pass in x,y starting pos, canvas width and canvas height
+//      or just the entirety of the image and only
+//      cut the image when you draw it
+Background.prototype.add_sprite = function(x,y,w,h,filepath) {
+    var sprite = new Sprite(x,y,w,h);
+    sprite.init(filepath,MediaManager);
+    this.sprites.push(sprite);
+}
+
+
+// is this necessary?
 Background.prototype.init_img = function(filepath,manager) {
-    this.img = new Image();
-    this.img.src = manager.load(filepath);
+    //this.img = new Image();
+    //this.img.src = manager.load(filepath);
 }
 
 
-Background.prototype.scroll_speed = function(x,y) {
-    this.scroll.x = x;
-    this.scroll.y = y;
+Background.prototype.set_scroll_speed = function(x,y) {
+    //this.scroll.x = x;
+    //this.scroll.y = y;
+
+    this.vel.x = x;
+    this.vel.y = y;
+
 }
 
 
 Background.prototype.update = function(elapsed_time) {
-    this.rect.x += this.scroll.x * elapsed_time;
-    this.rect.y += this.scroll.y * elapsed_time;
+    //this.rect.x += this.scroll.x * elapsed_time;
+    //this.rect.y += this.scroll.y * elapsed_time;
+
+    // determine if there is a need to move sprite no here
 }
 
 
 Background.prototype.draw = function(context,canvas) {
-    context.drawImage(this.img,
-        this.rect.x,this.rect.y,
-        this.rect.w,this.rect.h,
-        0,0,canvas.width,canvas.height);
+    //context.drawImage(this.img,
+    //    this.rect.x,this.rect.y,
+    //    this.rect.w,this.rect.h,
+    //    0,0,canvas.width,canvas.height);
+
+    this.sprites[this.sprite_no].draw(context,this.pos.x,this.pos.y);
+    // should differentiate the draw here, as it should
+    // not be wider than the canvas element
+
+    //context.drawImage(this.sprites[this.sprite_no],
+    //    this.rect.x,this.rect.y,
+    //    this.rect.w,this.rect.h,
+    //    0,0,canvas.width,canvas.height);
+
 }
 
 
@@ -303,32 +349,39 @@ function Body(x,y,w,h) {
 
 function Enemy(x,y,w,h) {
     // TODO give certain enemies action_string
-    // a string representing a sequence of actions
-    // to preform... gives illusion of AI
+    //      a string representing a sequence of actions
+    //      to preform... gives illusion of AI
     this.action_string = 'abcdefg';
 }
 
 
 
-function Player(x,y,w,h) {
+function PlayerState(invincible,in_motion) {
+    this.invincible = invincible;
+    this.in_motion = in_motion;
+}
+
+
+
+function Player(x,y) {
     
     this.invincible = false;
     this.in_motion = false;
-
-    // TODO these should all be vectors
-    //      of accel, vel, maybe x be pos
-    //this.x = x;
-    //this.y = y;
-    
 
     this.pos = new Pos2D(x,y);
     this.vel = new Vec2D(0,0);
     this.accel = new Vec2D(0,0);
 
+}
 
-    // represents collision skeleton
-    this.rect = new Rectangle(x,y,w,h);
 
+Player.prototype.init_position = function(x,y) {
+    this.pos = new Pos2D(x,y);
+}
+
+
+Player.prototype.init_collision = function(x,y,w,h) {
+    this.skeleton = new Rectangle(x,y,w,h);
 }
 
 
@@ -370,40 +423,14 @@ Player.prototype.stop_moving_vertically = function() {
 
 Player.prototype.update = function(elapsed_time) {
 
-    /*
-    this.vel.x = Physics.velocity_delta(this.accel.x,this.vel.x,elapsed_time);
-    this.vel.y = Physics.velocity_delta(this.accel.y,this.vel.y,elapsed_time);
-
-    if (this.vel.magnitude() > MAX_VEL_MAG)
-        this.vel.normalize(MAX_VEL_MAG);
-
-    this.pos.x = Physics.kinematics(this.accel.x,this.vel.x,this.pos.x,elapsed_time);
-    this.pos.y = Physics.kinematics(this.accel.y,this.vel.y,this.pos.y,elapsed_time);
-
-    this.vel.x = Physics.friction(FRICTION,this.vel.x);
-    this.vel.y = Physics.friction(FRICTION,this.vel.y);
-    */
-
-
-
-    //this.vel.x = Physics.velocity_delta(this.accel.x,this.vel.x,elapsed_time);
-    //this.vel.y = Physics.velocity_delta(this.accel.y,this.vel.y,elapsed_time);
-
     this.vel = Physics.velocity_delta_2d(this.accel,this.vel,elapsed_time);
-
-    if (this.vel.magnitude() > MAX_VEL_MAG)
-        this.vel.normalize(MAX_VEL_MAG);
-
-    //this.pos.x = Physics.kinematics(this.accel.x,this.vel.x,this.pos.x,elapsed_time);
-    //this.pos.y = Physics.kinematics(this.accel.y,this.vel.y,this.pos.y,elapsed_time);
-
-    this.pos = Physics.kinematics_2d(this.accel,this.vel,this.pos,elapsed_time);
-
-    //this.vel.x = Physics.friction(FRICTION,this.vel.x);
-    //this.vel.y = Physics.friction(FRICTION,this.vel.y);
-
     this.vel = Physics.friction_2d(FRICTION,this.vel);
 
+    if (this.vel.magnitude() > MAX_VEL_MAG)
+        this.vel.normalize(MAX_VEL_MAG);
+
+    this.pos = Physics.kinematics_2d(this.accel,this.vel,this.pos,elapsed_time);
+    
 }
 
 
@@ -428,13 +455,19 @@ var Core = {
 
         this.input = new Input();
 
-        this.player = new Player(0,0,180,275);
-        this.player.init_sprite('img/spiked ship 3. small.blue_.PNG',0,0,150,120);
+        this.player = new Player(0,0);
+        this.player.init_sprite('img/ship3 (3).png',0,0,104,81);
+        this.player.init_collision(0,0,104,81);
 
-        //this.background = new Background(0,0,this.canvas.width,this.canvas.height);
-        //this.background.init_img('img/level1Background (1).png',MediaManager);
+        this.background = new Background(0,0);
+        this.background.add_sprite(0,0,
+            this.canvas.width,this.canvas.height,
+            'img/carina-nebulae.jpg');
 
+        
         // TODO add a filereader that inputs xml files for level loading
+        //      including enemy placement and landmarks
+
 
         var self = this;
         setInterval(function(){
@@ -446,11 +479,7 @@ var Core = {
     },
 
     update: function(elapsed_time) {
-        //update sprite
-
         this.player.update(elapsed_time);
-        //this.background.update();
-
         this.input.begin_new_frame();
 
     },
@@ -490,8 +519,8 @@ var Core = {
 
     draw: function() {
         this.clear();
+        this.background.draw(this.context,this.canvas);
         this.player.draw(this.context);
-        //this.background.draw(this.context,this.canvas);
     },
 
     clear: function() {
