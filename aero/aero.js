@@ -271,7 +271,7 @@ function Background(x,y) {
 
     this.spatiality = new Rectangle(0,0,0,0);
 
-    this.loop = false;
+    this.loopable = false;
 
 
 }
@@ -315,13 +315,26 @@ Background.prototype.set_scroll_speed = function(x,y) {
 }
 
 
+Background.prototype.set_if_loopable = function(loopable) {
+    this.loopable = loopable;
+}
+
+
+// TODO set acceleration that slows down at designated points
+//      such as, slowing scroll when reach end of screen
 Background.prototype.update = function(elapsed_time) {
     //this.rect.x += this.scroll.x * elapsed_time;
     //this.rect.y += this.scroll.y * elapsed_time;
 
-    
-    this.pos.x += this.vel.x * elapsed_time;
-    this.pos.y += this.vel.y * elapsed_time;
+
+    if (this.loopable) {
+
+    }
+    if (this.pos.y <= 0) {
+        this.pos.x += this.vel.x * elapsed_time;
+        this.pos.y += this.vel.y * elapsed_time;
+    }
+
 
 
 }
@@ -474,6 +487,7 @@ var Core = {
             'img/carina-nebulae-ref.png');
         
         this.background.set_scroll_speed(0,0.01);
+        this.background.set_if_loopable(false);
         
         
         // TODO add a filereader that inputs xml files for level loading
