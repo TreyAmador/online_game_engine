@@ -30,6 +30,9 @@ var MAX_VEL_MAG = 0.2;
 var FRICTION = 0.90;
 
 
+var STAR_COUNT = 25;
+
+
 var KEY = Object({
     UP:38,
     DOWN:40,
@@ -220,6 +223,21 @@ var Physics = {
 };
 
 
+
+var Calculator = {
+
+
+    rand_range: function(min,max) {
+        //min = Math.ceil(min);
+        //max = Math.floor(max);
+        return Math.floor(Math.random()*(max-min)) + min;
+    },
+
+
+};
+
+
+
 function Rectangle(x,y,w,h) {
     this.x = x;
     this.y = y;
@@ -361,8 +379,7 @@ Background.prototype.update = function(elapsed_time) {
     
     // calling this.vel.y is prone to error
     if (this.loopable) {
-        
-        if (Math.round(this.pos.y) >= 0) {
+        if (Math.ceil(this.pos.y) > 0) {
             var temp = this.curr;
             this.curr = this.next;
             this.next = temp;
@@ -403,6 +420,60 @@ Background.prototype.draw = function(context,canvas) {
 
 
 }
+
+
+
+function StarRand(x,y) {
+    this.pos = new Pos2D(
+        Calculator.rand_range(0,CANVAS_WIDTH), y);
+    this.vel = new Vec2D(0, Math.random() % 0.1);
+}
+
+
+function Stars(count) {
+    this.init_stars(count);
+    this.size = 1;
+    this.color = '#ffe4c4';
+}
+
+
+Stars.prototype.init_stars = function(count) {
+    this.stars = [];
+    //var stars = [];
+    for (var i = 0; i < count; ++i) {
+        this.stars.push(new StarRand(
+            0,Calculator.rand_range(0,CANVAS_WIDTH)));
+    }
+}
+
+
+Stars.prototype.update = function(elapsed_time) {
+    var len = this.stars.length;
+    for (var i = 0; i < len; ++i) {
+        this.stars[i].pos.y += this.stars[i].vel.y * elapsed_time;
+        if (this.stars[i].pos.y > CANVAS_HEIGHT) {
+            delete this.stars[i];
+            this.stars[i] = new StarRand(0,0);
+        }
+    }
+}
+
+
+Stars.prototype.draw = function(context) {
+    
+    var len = this.stars.length;
+    for (var i = 0; i < len; ++i) {
+        context.beginPath();
+        context.arc(this.stars[i].pos.x,this.stars[i].pos.y,
+            1,0,Math.PI*2);
+        context.fillStyle = this.color;
+        context.fill();
+    }
+
+}
+
+
+
 
 
 
@@ -655,6 +726,10 @@ var Core = {
         this.player.add_collision(42,10,20,16);
 
 
+        this.stars = new Stars(STAR_COUNT);
+        var stars = new Stars(STAR_COUNT);
+
+
         //this.background = new Background(-1200,this.canvas.height-5120);
         //this.background.set_spatiality(0,0,2880,5120);
         //this.background.add_sprite(0,0,
@@ -665,14 +740,14 @@ var Core = {
         //this.background.set_if_loopable(false);
         
 
-        this.background = new Background(0,-600);
-        this.background.set_spatiality(0,0,800,1200);
-        this.background.add_sprite(0,0,
-            this.background.spatiality.w,
-            this.background.spatiality.h,
-            'img/level1Background.png');
-        this.background.set_scroll_speed(0,0.01);
-        this.background.set_loopable(true);
+        //this.background = new Background(0,-600);
+        //this.background.set_spatiality(0,0,800,1200);
+        //this.background.add_sprite(0,0,
+        //    this.background.spatiality.w,
+        //    this.background.spatiality.h,
+        //    'img/level1Background.png');
+        //this.background.set_scroll_speed(0,0.01);
+        //this.background.set_loopable(true);
 
 
         // TODO add a filereader that inputs xml files for level loading
@@ -729,14 +804,16 @@ var Core = {
 
     update: function(elapsed_time) {
         this.player.update(elapsed_time);
-        this.background.update(elapsed_time);
+        //this.background.update(elapsed_time);
+        this.stars.update(elapsed_time);
         this.input.begin_new_frame();
     },
 
 
     draw: function() {
         this.clear();
-        this.background.draw(this.context,this.canvas);
+        //this.background.draw(this.context,this.canvas);
+        this.stars.draw(this.context);
         this.player.draw(this.context);
         this.player.draw_collision(this.context,'#ffffff');
     },
