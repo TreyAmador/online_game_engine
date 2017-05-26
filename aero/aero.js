@@ -185,9 +185,21 @@ var Physics = {
     },
 
     kinematics_2d: function(a,v,p,t) {
-        p.x = a.x/2*t*t + v.x*t + p.x;
-        p.y = a.y/2*t*t + v.y*t + p.y;
-        return p;
+        var delta = new Pos2D(
+            a.x/2*t*t + v.x*t + p.x,
+            a.y/2*t*t + v.y*t + p.y);
+        return delta;
+
+        //p.x = a.x/2*t*t + v.x*t + p.x;
+        //p.y = a.y/2*t*t + v.y*t + p.y;
+        //return p;
+    },
+
+    kinematics_delta_2d: function(a,v,t) {
+        var delta = new Pos2D(
+            a.x/2*t*t + v.x*t,
+            a.y/2*t*t + v.y*t);
+        return delta;
     },
 
     friction: function(f,x) {
@@ -211,6 +223,8 @@ function Rectangle(x,y,w,h) {
 }
 
 
+
+// TODO add offset to sprite itself
 function Sprite(x,y,w,h) {
     this.body = new Rectangle(x,y,w,h);
     this.height_scale = 1;
@@ -262,11 +276,13 @@ Sprite.prototype.update = function(elapsed_time) {
 
 // pass different functions for src and dest dimensions
 Sprite.prototype.draw = function(context,x,y) {
+
     context.drawImage(this.img,
         this.body.x,this.body.y,
         this.body.w,this.body.h,x,y,
         this.width_scale*this.body.w,
         this.height_scale*this.body.h);
+
 }
 
 
@@ -383,6 +399,8 @@ function PlayerState(invincible,in_motion) {
 
 
 
+/*
+
 // TODO modify this to be a player superclass
 // TODO sprite should be drawn relative to body
 //      not body relative to sprite
@@ -391,7 +409,6 @@ function Body(x,y) {
     this.sprites = {};
     this.state = 0;
 
-    // the position of all things related to body
     this.pos = new Pos2D(x,y);
     this.vel = new Vec2D(0,0);
     this.accel = new Vec2D(0,0);
@@ -415,34 +432,39 @@ Body.prototype = {
         this.sprites[state].init(filepath,MediaManager);
     },
 
+    move_pos: function(delta) {
+        this.pos.x += delta.x;
+        this.pos.y += delta.y;
+    },
+
 };
 
 
-function RectBody(w,h) {
-    this.collision = new Rectangle(
-        this.pos.x,this.pos.y,w,h);
+function RectBody(x,y,w,h) {
+    
+    //this.body = new Rectangle(x,y,w,h);
+
 }
 
 
 RectBody.prototype = {
 
-    //init_collision_offset: function(left,right,top,bottom) {
+    init_collision_offset: function(left,right,top,bottom) {
         // TODO check if offset make sense spatially
-    //    this.collision = new Rectangle(
-    //        this.x + left,
-    //        this.w - (left+right),
-    //        this.y + top,
-    //        this.h - (top+bottom));
-    //},
+        this.collision = new Rectangle(
+            this.x + left,
+            this.w - (left+right),
+            this.y + top,
+            this.h - (top+bottom));
+    },
 
     //init_body: function(x,y,w,h) {
     //    
     //},
 
+    //add_sprite_offset: function(left,right,top,bottom) {
 
-    add_sprite_offset: function(left,right,top,bottom) {
-
-    },
+    //},
 
     draw_body: function(context,color) {
         context.strokeStyle = color;
@@ -455,10 +477,167 @@ RectBody.prototype = {
 
 };
 
+*/
 
+
+
+var Body = {
+
+    sprites:{},
+    state:0,
+    //pos: null,
+    vel: new Vec2D(0,0),
+    accel: new Vec2D(0,0),
+
+    init_pos: function(x,y) {
+        this.pos = new Pos2D(x,y);
+    },
+
+    set_pos: function(pos) {
+        this.pos.x = pos.x;
+        this.pos.y = pos.y;
+    },
+
+    set_state: function(state) {
+        this.state = state;
+    },
+
+    add_sprite: function(filepath,state,x,y,w,h) {
+        this.sprites[state] = new Sprite(x,y,w,h);
+        this.sprites[state].init(filepath,MediaManager);
+    },
+
+};
+
+
+var RectBody = {
+
+    //collision: null,
+
+    init_collision: function(x,y,w,h) {
+        this.collision = new Rectangle(x,y,w,h);
+    },
+
+    init_collision_offset: function(left,right,top,bottom) {
+        // TODO implement this function
+    },
+
+    //move: function(offset) {
+    //    this.pos.x += offset.x;
+    //    this.pos.y += offset.y;
+    //    this.collision.x += offset.x;
+    //    this.collision.y += offset.y;
+    //},
+
+    move_body: function(x,y) {
+        this.pos.x += x;
+        this.pos.y += y;
+        this.collision.x += x;
+        this.collision.y += y;
+    },
+
+    //set_pos: function(offset) {
+    //
+    //},
+
+    draw_collision: function(context,color) {
+        context.strokeStyle = color;
+        context.strokeRect(
+            this.collision.x,
+            this.collision.y,
+            this.collision.w,
+            this.collision.h);
+    },
+
+};
+
+
+
+
+// pass args through ctor
+Player.prototype.inherit_from = function(BaseBody) {
+    for (var i in Body)
+        BaseBody[i] = Body[i];
+    for (var i in BaseBody)
+        this[i] = BaseBody[i];
+}
+
+
+
+
+function Player(BaseBody,x,y) {
+    this.inherit_from(BaseBody);
+    //this.init_pos(x,y);
+    this.invincible = false;
+    this.in_motion = false;
+}
+
+
+Player.prototype.move_up = function() {
+    this.accel.y = ACCEL_FORWARD;
+}
+
+
+Player.prototype.move_down = function() {
+    this.accel.y = ACCEL_BACK;
+}
+
+
+Player.prototype.move_right = function() {
+    this.accel.x = ACCEL_RIGHT;
+}
+
+
+Player.prototype.move_left = function() {
+    this.accel.x = ACCEL_LEFT;
+}
+
+
+Player.prototype.stop_moving_horizontally = function() {
+    this.accel.x = ACCEL_STOP;
+}
+
+
+Player.prototype.stop_moving_vertically = function() {
+    this.accel.y = ACCEL_STOP;
+}
+
+
+Player.prototype.update = function(elapsed_time) {
+
+    this.vel = Physics.velocity_delta_2d(this.accel,this.vel,elapsed_time);
+    this.vel = Physics.friction_2d(FRICTION,this.vel);
+
+    if (this.vel.magnitude() > MAX_VEL_MAG)
+        this.vel.normalize(MAX_VEL_MAG);
+
+    var offset = Physics.kinematics_2d(this.accel,this.vel,this.pos,elapsed_time);
+    //this.set_pos(offset);
+    //offset.x = offset.x - this.pos.x;
+    //offset.y = offset.y - this.pos.y;
+    //this.move(offset.x-this.pos.x,offset.y-this.pos.y);
+    //this.move(offset);
+
+    //console.log(this.collision);
+    
+    //console.log(offset.x-this.pos.x);
+
+    this.move_body(offset.x-this.pos.x,offset.y-this.pos.y);
+    
+}
+
+
+Player.prototype.draw = function(context) {
+    this.sprites[this.state].draw(context,this.pos.x,this.pos.y);
+}
+
+
+
+
+/*
 
 function Player(x,y) {
-    
+
     this.invincible = false;
     this.in_motion = false;
 
@@ -532,6 +711,7 @@ Player.prototype.draw = function(context) {
     this.sprite.draw(context,this.pos.x,this.pos.y);
 }
 
+*/
 
 
 var Core = {
@@ -549,9 +729,18 @@ var Core = {
 
         this.input = new Input();
 
-        this.player = new Player(0,0);
-        this.player.init_sprite('img/ship3 (3).png',0,0,104,81);
-        this.player.init_collision(0,0,104,81);
+        //this.player = new Player(0,0);
+        //this.player.init_sprite('img/ship3 (3).png',0,0,104,81);
+        //this.player.init_collision(0,0,104,81);
+
+
+        this.player = new Player(RectBody,0,0);
+        this.player.set_state(PLAYER_STATE.FLY);
+        this.player.add_sprite('img/ship3 (3).png',
+            PLAYER_STATE.FLY,0,0,104,81);
+        this.player.init_pos(0,0);
+        this.player.init_collision(20,10,64,61);
+
 
         //this.background = new Background(-1200,this.canvas.height-5120);
         //this.background.set_spatiality(0,0,2880,5120);
@@ -621,6 +810,7 @@ var Core = {
         this.clear();
         //this.background.draw(this.context,this.canvas);
         this.player.draw(this.context);
+        this.player.draw_collision(this.context,'#ff0000');
     },
 
     clear: function() {
