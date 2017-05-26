@@ -299,12 +299,17 @@ function Background(x,y) {
 
     this.sprites = [];
     this.sprite_no = 0;
-    this.vel = new Vec2D(0,0);
+
     this.pos = new Pos2D(x,y);
+    this.orig_pos = new Pos2D(x,y);
+    this.vel = new Vec2D(0,0);
 
     this.spatiality = new Rectangle(0,0,0,0);
-
     this.loopable = false;
+
+    // this is just a test, this is only a test
+    this.curr = 0;
+    this.next = 1;
 
 }
 
@@ -336,8 +341,12 @@ Background.prototype.set_scroll_speed = function(x,y) {
 }
 
 
-Background.prototype.set_if_loopable = function(loopable) {
+// this probably needs to be revised
+Background.prototype.set_loopable = function(loopable) {
     this.loopable = loopable;
+    if (this.loopable && this.sprites.length == 1) {
+        this.sprites.push(this.sprites[0]);
+    }
 }
 
 
@@ -345,13 +354,25 @@ Background.prototype.set_if_loopable = function(loopable) {
 //      such as, slowing scroll when reach end of screen
 Background.prototype.update = function(elapsed_time) {
 
-    if (this.loopable) {
 
+    // TODO check movement of left to right as well
+    // TODO put this on a 'treadmill' rather than reset
+
+    
+    // calling this.vel.y is prone to error
+    if (this.loopable) {
+        
+        if (Math.round(this.pos.y) >= 0) {
+            var temp = this.curr;
+            this.curr = this.next;
+            this.next = temp;
+            this.pos.y = this.orig_pos.y;
+        } else {
+            this.pos.x += this.vel.x * elapsed_time;
+            this.pos.y += this.vel.y * elapsed_time;
+        }
     }
-    if (this.pos.y < 0) {
-        this.pos.x += this.vel.x * elapsed_time;
-        this.pos.y += this.vel.y * elapsed_time;
-    }
+
 
 }
 
@@ -362,7 +383,7 @@ Background.prototype.draw = function(context,canvas) {
     //    this.rect.w,this.rect.h,
     //    0,0,canvas.width,canvas.height);
 
-    this.sprites[this.sprite_no].draw(context,this.pos.x,this.pos.y);
+    //this.sprites[this.sprite_no].draw(context,this.pos.x,this.pos.y);
     // should differentiate the draw here, as it should
     // not be wider than the canvas element
 
@@ -370,6 +391,16 @@ Background.prototype.draw = function(context,canvas) {
     //    this.rect.x,this.rect.y,
     //    this.rect.w,this.rect.h,
     //    0,0,canvas.width,canvas.height);
+
+
+    // there is just an ever-so-slight jump ...
+    if (this.loopable) {
+        //console.log(this.curr);
+        var h = this.sprites[this.curr].body.h;
+        this.sprites[this.curr].draw(context,this.pos.x,this.pos.y);
+        this.sprites[this.next].draw(context,this.pos.x,this.pos.y+h);
+    }
+
 
 }
 
@@ -630,10 +661,19 @@ var Core = {
         //    this.background.spatiality.w,
         //    this.background.spatiality.h,
         //    'img/carina-nebulae-ref.png');
-        
         //this.background.set_scroll_speed(0,0.01);
         //this.background.set_if_loopable(false);
         
+
+        this.background = new Background(0,-600);
+        this.background.set_spatiality(0,0,800,1200);
+        this.background.add_sprite(0,0,
+            this.background.spatiality.w,
+            this.background.spatiality.h,
+            'img/level1Background.png');
+        this.background.set_scroll_speed(0,0.01);
+        this.background.set_loopable(true);
+
 
         // TODO add a filereader that inputs xml files for level loading
         //      including enemy placement and landmarks
@@ -646,13 +686,6 @@ var Core = {
             self.draw();
         });
 
-    },
-
-
-    update: function(elapsed_time) {
-        this.player.update(elapsed_time);
-        //this.background.update(elapsed_time);
-        this.input.begin_new_frame();
     },
 
 
@@ -694,9 +727,16 @@ var Core = {
     },
 
 
+    update: function(elapsed_time) {
+        this.player.update(elapsed_time);
+        this.background.update(elapsed_time);
+        this.input.begin_new_frame();
+    },
+
+
     draw: function() {
         this.clear();
-        //this.background.draw(this.context,this.canvas);
+        this.background.draw(this.context,this.canvas);
         this.player.draw(this.context);
         this.player.draw_collision(this.context,'#ffffff');
     },
