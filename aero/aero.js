@@ -1,5 +1,17 @@
 /*  */
 
+// TODO BIG IDEAS
+//
+//      to each organism:
+//      add object of frames....
+//          a frame is:
+//              animated sprite array
+//              collision shape array
+//                  collision shape inherited by body
+//              frame_no index which indicates frame
+//
+
+
 
 var MSEC_PER_SEC = 1000;
 var FRAMES_PER_SEC = 30;
@@ -11,20 +23,11 @@ var CANVAS_HEIGHT = 600;
 // there should be vectors of accel and vel
 // where the magnitude is capped at max value
 // not each individual var
-var ACCEL_FORWARD = -0.002;
-var ACCEL_LEFT = -0.002;
-var ACCEL_RIGHT = 0.002
-var ACCEL_BACK = 0.002;
+
+var ACCEL_START = 0.001;
 var ACCEL_STOP = 0.0;
-
-var MAX_VEL_FORWARD = -0.2;
-var MAX_VEL_LEFT = -0.2;
-var MAX_VEL_RIGHT = 0.2;
-var MAX_VEL_REVERSE = 0.2;
-
 var MAX_VEL_MAG = 0.2;
-
-var FRICTION = 0.7;
+var FRICTION = 0.90;
 
 
 var KEY = Object({
@@ -328,12 +331,8 @@ Background.prototype.add_sprite = function(x,y,w,h,filepath) {
 
 
 Background.prototype.set_scroll_speed = function(x,y) {
-    //this.scroll.x = x;
-    //this.scroll.y = y;
-
     this.vel.x = x;
     this.vel.y = y;
-
 }
 
 
@@ -408,12 +407,12 @@ var Body = {
     },
 
 
-    init_vel: function(x,y) {
+    init_vel: function() {
         this.vel = new Vec2D(0,0);
     },
 
 
-    init_accel: function(x,y) {
+    init_accel: function() {
         this.accel = new Vec2D(0,0);
     },
 
@@ -438,16 +437,18 @@ var Body = {
 };
 
 
+
 var RectBody = {
 
 
     init_collision: function(x,y,w,h) {
-        this.collision = new Rectangle(x,y,w,h);
+        this.collision = new Rectangle(
+            this.pos.x+x,this.pos.y+y,w,h);
     },
 
 
     init_collision_offset: function(left,right,top,bottom) {
-        // TODO implement this function
+        // TODO implement this function (?)
     },
 
 
@@ -475,6 +476,52 @@ var RectBody = {
 
 
 
+var MultiRectBody = {
+
+
+    collisions:[],
+
+
+    add_collision: function(x,y,w,h) {
+        
+        this.collisions.push(new Rectangle(
+            this.pos.x+x,this.pos.y+y,w,h));
+    },
+
+
+    move_body: function(offset) {
+
+        this.pos.x += offset.x;
+        this.pos.y += offset.y;
+        var len = this.collisions.length;
+        for (var i = 0; i < len; ++i) {
+            this.collisions[i].x += offset.x;
+            this.collisions[i].y += offset.y;
+        }
+
+    },
+
+
+    draw_collision: function(context,color) {
+
+        context.strokeStyle = color;
+
+        var len = this.collisions.length;
+        for (var i = 0; i < len; ++i) {
+            context.strokeRect(
+                this.collisions[i].x,
+                this.collisions[i].y,
+                this.collisions[i].w,
+                this.collisions[i].h);
+        }
+
+    },
+
+
+};
+
+
+
 // pass args through ctor
 Player.prototype.inherit_from = function(BaseBody) {
     for (var i in Body)
@@ -492,22 +539,22 @@ function Player(BaseBody) {
 
 
 Player.prototype.move_up = function() {
-    this.accel.y = ACCEL_FORWARD;
+    this.accel.y = -ACCEL_START;
 }
 
 
 Player.prototype.move_down = function() {
-    this.accel.y = ACCEL_BACK;
+    this.accel.y = ACCEL_START;
 }
 
 
 Player.prototype.move_right = function() {
-    this.accel.x = ACCEL_RIGHT;
+    this.accel.x = ACCEL_START;
 }
 
 
 Player.prototype.move_left = function() {
-    this.accel.x = ACCEL_LEFT;
+    this.accel.x = -ACCEL_START;
 }
 
 
@@ -543,6 +590,7 @@ Player.prototype.draw = function(context) {
 
 var Core = {
 
+
     init: function() {
         
         this.canvas = document.createElement('canvas');
@@ -556,17 +604,24 @@ var Core = {
 
         this.input = new Input();
 
-        //this.player = new Player(0,0);
-        //this.player.init_sprite('img/ship3 (3).png',0,0,104,81);
-        //this.player.init_collision(0,0,104,81);
 
+        //this.player = new Player(RectBody);
+        //this.player.set_state(PLAYER_STATE.FLY);
+        //this.player.add_sprite('img/ship3 (3).png',
+        //    PLAYER_STATE.FLY,0,0,104,81);
+        //this.player.init_pos(300,200);
+        //this.player.init_collision(20,10,64,61);
+        
 
-        this.player = new Player(RectBody,0,0);
+        this.player = new Player(MultiRectBody);
         this.player.set_state(PLAYER_STATE.FLY);
         this.player.add_sprite('img/ship3 (3).png',
             PLAYER_STATE.FLY,0,0,104,81);
-        this.player.init_pos(0,0);
-        this.player.init_collision(20,10,64,61);
+        this.player.init_pos(300,200);
+        this.player.add_collision(20,16,10,58);
+        this.player.add_collision(74,16,10,58);
+        this.player.add_collision(30,26,44,16);
+        this.player.add_collision(42,10,20,16);
 
 
         //this.background = new Background(-1200,this.canvas.height-5120);
@@ -586,18 +641,20 @@ var Core = {
 
         var self = this;
         setInterval(function(){
-            self.update(TIME_INTERVAL);
             self.handle_input();
+            self.update(TIME_INTERVAL);
             self.draw();
         });
 
     },
+
 
     update: function(elapsed_time) {
         this.player.update(elapsed_time);
         //this.background.update(elapsed_time);
         this.input.begin_new_frame();
     },
+
 
     handle_input: function() {
 
@@ -614,6 +671,7 @@ var Core = {
             this.player.stop_moving_horizontally();
         }
 
+
         if (this.input.is_key_held(KEY.UP) && this.input.is_key_held(KEY.DOWN)) {
             this.player.stop_moving_vertically();
         }
@@ -627,23 +685,28 @@ var Core = {
             this.player.stop_moving_vertically();
         }
 
+
         if (this.input.was_key_pressed(KEY.SPACE)) {
             console.log('fire!');
         }
 
+
     },
+
 
     draw: function() {
         this.clear();
         //this.background.draw(this.context,this.canvas);
         this.player.draw(this.context);
-        this.player.draw_collision(this.context,'#ff0000');
+        this.player.draw_collision(this.context,'#ffffff');
     },
+
 
     clear: function() {
         this.context.clearRect(0,0,
         this.canvas.width,this.canvas.height);
-    }
+    },
+
 
 };
 
