@@ -1,4 +1,5 @@
-/*  */
+// aerofighters clone
+
 
 // TODO BIG IDEAS
 //
@@ -48,13 +49,14 @@ var PLAYER_STATE = Object.freeze({
 
 
 
-// corresponds to action strings
-// enemeis do action here
-// ex.  fly in certain direction
-//      fly towards player
-//      fire missle somewhere
-//      fire missle at player
-//      rotate in player's direction
+// TODO implement enemy action enum
+//      corresponds to action strings
+//      enemeis do action here
+//      ex.  fly in certain direction
+//          fly towards player
+//          fire missle somewhere
+//          fire missle at player
+//          rotate in player's direction
 var ENEMY_ACTIONS = Object({
 
 });
@@ -395,6 +397,7 @@ Background.prototype.update = function(elapsed_time) {
 
 
 Background.prototype.draw = function(context,canvas) {
+
     //context.drawImage(this.img,
     //    this.rect.x,this.rect.y,
     //    this.rect.w,this.rect.h,
@@ -426,20 +429,21 @@ Background.prototype.draw = function(context,canvas) {
 function StarRand(x,y) {
     this.pos = new Pos2D(
         Calculator.rand_range(0,CANVAS_WIDTH), y);
-    this.vel = new Vec2D(0, Math.random() % 0.1);
+    this.vel = new Vec2D(0, Math.random() % 0.1 + 0.001);
 }
+
 
 
 function Stars(count) {
     this.init_stars(count);
     this.size = 1;
-    this.color = '#ffe4c4';
+    this.color = '#e6e6fa';
 }
+
 
 
 Stars.prototype.init_stars = function(count) {
     this.stars = [];
-    //var stars = [];
     for (var i = 0; i < count; ++i) {
         this.stars.push(new StarRand(
             0,Calculator.rand_range(0,CANVAS_WIDTH)));
@@ -452,8 +456,8 @@ Stars.prototype.update = function(elapsed_time) {
     for (var i = 0; i < len; ++i) {
         this.stars[i].pos.y += this.stars[i].vel.y * elapsed_time;
         if (this.stars[i].pos.y > CANVAS_HEIGHT) {
-            delete this.stars[i];
-            this.stars[i] = new StarRand(0,0);
+            this.stars[i].pos.x = Calculator.rand_range(0,CANVAS_WIDTH);
+            this.stars[i].pos.y = 0;
         }
     }
 }
@@ -475,6 +479,81 @@ Stars.prototype.draw = function(context) {
 
 
 
+/*
+// WORK ON THIS BELOW!
+// this needs some work!
+
+function Lasers(max,color) {
+    this.fired = [];
+    this.max = max;
+    this.set_size(2,10);
+    this.color = color;
+}
+
+
+Lasers.prototype.set_size = function(w,h) {
+    this.w = w;
+    this.h = h;
+}
+
+
+Lasers.prototype.init_vel = function(vel_y) {
+    this.vel = new Vec2D(0,-vel_y);
+}
+
+
+// pass in player coord
+Lasers.prototype.fire = function(x,y) {
+    if (this.fired.length <= this.max) {
+        this.fired.push(new Laser(
+            x,y,this.w,this.h,this.vel));
+    }
+}
+
+
+Lasers.prototype.update = function(elapsed_time) {
+    var len = this.fired.length;
+    for (var i = 0; i < len; ++i) {
+        var laser = this.fired[i];
+        if (laser.pos.y > 0) {
+            laser.update(elapsed_time);
+        } else {
+            this.fired.splice(i,1);
+        }
+    }
+}
+
+
+Lasers.prototype.draw = function(context) {
+    var len = this.fired.length;
+    for (var i = 0; i < len; ++i) {
+        this.fired[i].draw(context);
+    }
+}
+
+
+function Laser(x,y,w,h,vel) {
+    this.pos = new Pos2D(x,y);
+    this.vel = vel;
+    this.w = w;
+    this.h = h;
+}
+
+
+Laser.prototype.update = function(elapsed_time) {
+    this.pos.y += this.vel.y*elapsed_time;
+}
+
+
+Laser.prototype.draw = function(context) {
+    context.fillRect(
+        this.pos.x,this.pos.y,
+        this.w,this.h);
+}
+
+// WORK ON THE ABOVE
+
+*/
 
 
 //function Enemy(x,y,w,h) {
@@ -483,6 +562,73 @@ Stars.prototype.draw = function(context) {
     //      to preform... gives illusion of AI
 //    this.action_string = 'abcdefg';
 //}
+
+
+
+function Laser(x,y,w,h,vel_y) {
+    //this.body = new Rectangle(x,y,w,h);
+    this.pos = new Pos2D(x,y);
+    this.vel = new Vec2D(0,vel_y);
+}
+
+
+Laser.prototype.update = function(elapsed_time) {
+    //this.body.y -= this.vel.y * elapsed_time;
+    this.pos.y -= this.vel.y * elapsed_time;
+}
+
+
+Laser.prototype.draw = function(context) {
+    //context.fillRect(
+    //    this.body.x,this.body.y,
+    //    this.body.w,this.body.h);
+}
+
+
+
+
+function Lasers() {
+    this.lasers = [];
+    this.color = '#ffffff';
+    this.w = 2;
+    this.h = 10;
+}
+
+
+Lasers.prototype.set_size = function(w,h) {
+    this.w = w;
+    this.h = h;
+}
+
+
+Lasers.prototype.set_color = function(color) {
+    this.color = color;
+}
+
+
+Lasers.prototype.fire = function(x,y) {
+    this.lasers.push(new Laser(x,y,this.w,this.h,0.01));
+}
+
+
+Lasers.prototype.update = function(elapsed_time) {
+    var len = this.lasers.length;
+    for (var i = 0; i < len; ++i) {
+        this.lasers[i].update(elapsed_time);
+    }
+}
+
+
+Lasers.prototype.draw = function(context) {
+    context.fillStyle = this.color;
+    var len = this.lasers.length;
+    for (var i = 0; i < len; ++i) {
+        context.fillRect(
+            this.lasers[i].pos.x,
+            this.lasers[i].pos.y,
+            this.w,this.h);
+    }
+}
 
 
 function PlayerState(invincible,in_motion) {
@@ -633,10 +779,23 @@ Player.prototype.inherit_from = function(BaseBody) {
 }
 
 
+
 function Player(BaseBody) {
     this.inherit_from(BaseBody);
     this.invincible = false;
     this.in_motion = false;
+
+    // does this work?
+    //this.lasers = new Lasers(3,'#ffffff');
+
+    //this.laser = new Laser(100,600,2,10,0.01);
+    //this.laser.set_color('#ff00ff');
+
+    this.lasers = new Lasers();
+    
+    //this.lasers.fire(100,600);
+
+    
 }
 
 
@@ -670,6 +829,12 @@ Player.prototype.stop_moving_vertically = function() {
 }
 
 
+Player.prototype.fire = function() {
+    //this.lasers.fire(this.pos.x,this.pos.y);
+    this.lasers.fire(this.pos.x,this.pos.y);
+}
+
+
 Player.prototype.update = function(elapsed_time) {
 
     this.vel = Physics.velocity_delta_2d(this.accel,this.vel,elapsed_time);
@@ -680,12 +845,29 @@ Player.prototype.update = function(elapsed_time) {
 
     var delta = Physics.kinematics_delta_2d(this.accel,this.vel,elapsed_time);
     this.move_body(delta);
+
     
+    // does this work?
+    //this.lasers.update(elapsed_time);
+
+    //this.laser.update(elapsed_time);
+    
+    this.lasers.update(elapsed_time);
+
 }
 
 
 Player.prototype.draw = function(context) {
+    // does this work?
+    //this.lasers.draw(context);
+
+    //this.laser.draw(context);
+
+    this.lasers.draw(context);
+
+
     this.sprites[this.state].draw(context,this.pos.x,this.pos.y);
+
 }
 
 
@@ -795,7 +977,7 @@ var Core = {
 
 
         if (this.input.was_key_pressed(KEY.SPACE)) {
-            console.log('fire!');
+            this.player.fire();
         }
 
 
