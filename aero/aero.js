@@ -4,8 +4,8 @@
 var MSEC_PER_SEC = 1000;
 var FRAMES_PER_SEC = 30;
 var TIME_INTERVAL = MSEC_PER_SEC / FRAMES_PER_SEC;
-var CANVAS_WIDTH = 640;
-var CANVAS_HEIGHT = 480;
+var CANVAS_WIDTH = 800;
+var CANVAS_HEIGHT = 600;
 
 
 // there should be vectors of accel and vel
@@ -36,6 +36,12 @@ var KEY = Object({
 });
 
 
+var PLAYER_STATE = Object.freeze({
+    FLY:0
+});
+
+
+
 // corresponds to action strings
 // enemeis do action here
 // ex.  fly in certain direction
@@ -57,32 +63,39 @@ function Input() {
     this.init();
 }
 
+
 Input.prototype.begin_new_frame = function() {
     this.pressed_keys = {};
     this.released_keys = {};
 }
+
 
 Input.prototype.key_down_event = function(event) {
     this.pressed_keys[event.keyCode] = this.timer.getTime();
     this.held_keys[event.keyCode] = this.timer.getTime();
 }
 
+
 Input.prototype.key_up_event = function(event) {
     this.pressed_keys[event.keyCode] = this.timer.getTime();
     delete this.held_keys[event.keyCode];
 }
 
+
 Input.prototype.was_key_pressed = function(key) {
     return this.pressed_keys[key];
 }
+
 
 Input.prototype.was_key_released = function(key) {
     return this.released_keys[key];
 }
 
+
 Input.prototype.is_key_held = function(key) {
     return this.held_keys[key];
 }
+
 
 Input.prototype.init = function() {
 
@@ -96,6 +109,7 @@ Input.prototype.init = function() {
     },false);
 
 }
+
 
 
 var MediaManager = {
@@ -118,10 +132,12 @@ function Pos2D(x,y) {
 }
 
 
+
 function Vec2D(x,y) {
     this.x = x;
     this.y = y;
 }
+
 
 
 Vec2D.prototype.magnitude = function() {
@@ -169,8 +185,8 @@ var Physics = {
     },
 
     kinematics_2d: function(a,v,p,t) {
-        p.x = ((a.x/2) * t * t + v.x * t + p.x);
-        p.y = ((a.y/2) * t * t + v.y * t + p.y);
+        p.x = a.x/2*t*t + v.x*t + p.x;
+        p.y = a.y/2*t*t + v.y*t + p.y;
         return p;
     },
 
@@ -197,8 +213,8 @@ function Rectangle(x,y,w,h) {
 
 function Sprite(x,y,w,h) {
     this.body = new Rectangle(x,y,w,h);
-    this.size_height = 1;
-    this.size_width = 1;
+    this.height_scale = 1;
+    this.width_scale = 1;
 }
 
 
@@ -249,20 +265,19 @@ Sprite.prototype.draw = function(context,x,y) {
     context.drawImage(this.img,
         this.body.x,this.body.y,
         this.body.w,this.body.h,x,y,
-        this.size_width*this.body.w,
-        this.size_height*this.body.h);
+        this.width_scale*this.body.w,
+        this.height_scale*this.body.h);
 }
 
 
 
 function Background(x,y) {
+
     //this.rect = new Rectangle(x,y,w,h);
     //this.scroll = new Vec2D(0,0);
 
-
     // TODO add vel,acc vector to background
     //      this allow dynamic map movement
-
 
     this.sprites = [];
     this.sprite_no = 0;
@@ -272,7 +287,6 @@ function Background(x,y) {
     this.spatiality = new Rectangle(0,0,0,0);
 
     this.loopable = false;
-
 
 }
 
@@ -323,19 +337,14 @@ Background.prototype.set_if_loopable = function(loopable) {
 // TODO set acceleration that slows down at designated points
 //      such as, slowing scroll when reach end of screen
 Background.prototype.update = function(elapsed_time) {
-    //this.rect.x += this.scroll.x * elapsed_time;
-    //this.rect.y += this.scroll.y * elapsed_time;
-
 
     if (this.loopable) {
 
     }
-    if (this.pos.y <= 0) {
+    if (this.pos.y < 0) {
         this.pos.x += this.vel.x * elapsed_time;
         this.pos.y += this.vel.y * elapsed_time;
     }
-
-
 
 }
 
@@ -359,26 +368,92 @@ Background.prototype.draw = function(context,canvas) {
 
 
 
-// TODO modify this to be a player superclass
-function Body(x,y,w,h) {
-
-}
-
-
-
-function Enemy(x,y,w,h) {
+//function Enemy(x,y,w,h) {
     // TODO give certain enemies action_string
     //      a string representing a sequence of actions
     //      to preform... gives illusion of AI
-    this.action_string = 'abcdefg';
-}
-
+//    this.action_string = 'abcdefg';
+//}
 
 
 function PlayerState(invincible,in_motion) {
     this.invincible = invincible;
     this.in_motion = in_motion;
 }
+
+
+
+// TODO modify this to be a player superclass
+// TODO sprite should be drawn relative to body
+//      not body relative to sprite
+function Body(x,y) {
+
+    this.sprites = {};
+    this.state = 0;
+
+    // the position of all things related to body
+    this.pos = new Pos2D(x,y);
+    this.vel = new Vec2D(0,0);
+    this.accel = new Vec2D(0,0);
+    
+}
+
+
+Body.prototype = {
+
+    set_pos: function(x,y) {
+        this.pos.x = x;
+        this.pos.y = y;
+    },
+
+    set_state: function(state) {
+        this.state = state;
+    },
+
+    add_sprite: function(filepath,state,x,y,w,h) {
+        this.sprites[state] = new Sprite(x,y,w,h);
+        this.sprites[state].init(filepath,MediaManager);
+    },
+
+};
+
+
+function RectBody(w,h) {
+    this.collision = new Rectangle(
+        this.pos.x,this.pos.y,w,h);
+}
+
+
+RectBody.prototype = {
+
+    //init_collision_offset: function(left,right,top,bottom) {
+        // TODO check if offset make sense spatially
+    //    this.collision = new Rectangle(
+    //        this.x + left,
+    //        this.w - (left+right),
+    //        this.y + top,
+    //        this.h - (top+bottom));
+    //},
+
+    //init_body: function(x,y,w,h) {
+    //    
+    //},
+
+
+    add_sprite_offset: function(left,right,top,bottom) {
+
+    },
+
+    draw_body: function(context,color) {
+        context.strokeStyle = color;
+        context.strokeRect(
+            this.collision.x,
+            this.collision.y,
+            this.collision.w,
+            this.collision.h);
+    },
+
+};
 
 
 
@@ -464,8 +539,8 @@ var Core = {
     init: function() {
         
         this.canvas = document.createElement('canvas');
-        this.canvas.width = 640;
-        this.canvas.height = 480;
+        this.canvas.width = CANVAS_WIDTH;
+        this.canvas.height = CANVAS_HEIGHT;
         this.context = this.canvas.getContext('2d');
         
         var game_port = document.getElementById('game-port');
@@ -478,18 +553,17 @@ var Core = {
         this.player.init_sprite('img/ship3 (3).png',0,0,104,81);
         this.player.init_collision(0,0,104,81);
 
-        //var map_rect = new Rectangle(0,0,2880,5120);
-        this.background = new Background(-1200,this.canvas.height-5120);
-        this.background.set_spatiality(0,0,2880,5120);
-        this.background.add_sprite(0,0,
-            this.background.spatiality.w,
-            this.background.spatiality.h,
-            'img/carina-nebulae-ref.png');
+        //this.background = new Background(-1200,this.canvas.height-5120);
+        //this.background.set_spatiality(0,0,2880,5120);
+        //this.background.add_sprite(0,0,
+        //    this.background.spatiality.w,
+        //    this.background.spatiality.h,
+        //    'img/carina-nebulae-ref.png');
         
-        this.background.set_scroll_speed(0,0.01);
-        this.background.set_if_loopable(false);
+        //this.background.set_scroll_speed(0,0.01);
+        //this.background.set_if_loopable(false);
         
-        
+
         // TODO add a filereader that inputs xml files for level loading
         //      including enemy placement and landmarks
 
@@ -505,9 +579,8 @@ var Core = {
 
     update: function(elapsed_time) {
         this.player.update(elapsed_time);
-        this.background.update(elapsed_time);
+        //this.background.update(elapsed_time);
         this.input.begin_new_frame();
-
     },
 
     handle_input: function() {
@@ -541,11 +614,12 @@ var Core = {
         if (this.input.was_key_pressed(KEY.SPACE)) {
             console.log('fire!');
         }
+
     },
 
     draw: function() {
         this.clear();
-        this.background.draw(this.context,this.canvas);
+        //this.background.draw(this.context,this.canvas);
         this.player.draw(this.context);
     },
 
@@ -553,7 +627,6 @@ var Core = {
         this.context.clearRect(0,0,
         this.canvas.width,this.canvas.height);
     }
-
 
 };
 
