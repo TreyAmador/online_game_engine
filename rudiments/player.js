@@ -16,7 +16,7 @@ var Body = {
 
     state:0,
 
-    on_ground:false,
+    on_ground: false,
 
     add_coord_sprite: function(filepath,frames,w,h,state) {
         this.sprites[state] = new Sprite();
