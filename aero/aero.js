@@ -566,17 +566,16 @@ Laser.prototype.draw = function(context) {
 
 
 function Laser(x,y,w,h,vel_y) {
-    //this.body = new Rectangle(x,y,w,h);
     this.pos = new Pos2D(x,y);
     this.vel = new Vec2D(0,vel_y);
+    this.w = w;
+    this.h = y;
 }
 
 
 Laser.prototype.update = function(elapsed_time) {
-    //this.body.y -= this.vel.y * elapsed_time;
     this.pos.y -= this.vel.y * elapsed_time;
 }
-
 
 
 
@@ -586,6 +585,11 @@ function Lasers() {
     this.w = 2;
     this.h = 10;
     this.released = true;
+}
+
+
+Lasers.prototype.set_exit_point = function(w_ship,h_ship) {
+    this.x_offset = w_ship/2 - this.w/2;
 }
 
 
@@ -600,11 +604,11 @@ Lasers.prototype.set_color = function(color) {
 }
 
 
+// make more injections in lasers class
 Lasers.prototype.fire = function(x,y) {
-
     if (this.released) {
         this.lasers.push(new Laser(
-            x,y,this.w,this.h,0.01));
+            this.x_offset+x,y,this.w,this.h,0.3));
         this.released = false;
     }
 }
@@ -612,14 +616,16 @@ Lasers.prototype.fire = function(x,y) {
 
 Lasers.prototype.release = function() {
     this.released = true;
-    console.log(this.released);
 }
 
 
 Lasers.prototype.update = function(elapsed_time) {
-    var len = this.lasers.length;
-    for (var i = 0; i < len; ++i) {
+    for (var i = 0; i < this.lasers.length; ++i) {
         this.lasers[i].update(elapsed_time);
+        if (this.lasers[i].pos.y+this.h < 0) {
+            console.log(this.lasers[i].pos.y+this.h);
+            this.lasers.splice(i--,1);
+        }
     }
 }
 
@@ -634,6 +640,7 @@ Lasers.prototype.draw = function(context) {
             this.w,this.h);
     }
 }
+
 
 
 function PlayerState(invincible,in_motion) {
@@ -789,7 +796,7 @@ function Player(BaseBody) {
     this.inherit_from(BaseBody);
     this.invincible = false;
     this.in_motion = false;
-    this.lasers = new Lasers();    
+    this.lasers = new Lasers();
 }
 
 
@@ -891,6 +898,8 @@ var Core = {
         this.player.add_collision(30,26,44,16);
         this.player.add_collision(42,10,20,16);
 
+        this.player.lasers.set_exit_point(104,81);
+
 
         this.stars = new Stars(STAR_COUNT);
         var stars = new Stars(STAR_COUNT);
@@ -966,11 +975,9 @@ var Core = {
         //}
 
         if (this.input.was_key_pressed(KEY.SPACE)) {
-            console.log('trigger pressed');
             this.player.fire();
         } else if (this.input.was_key_released(KEY.SPACE)) {
             this.player.release_trigger();
-            console.log('trigger released');
         }
 
         
@@ -980,9 +987,6 @@ var Core = {
         //} else {
         //    console.log('trigger released');
         //}
-        
-
-
 
     },
 
@@ -1017,4 +1021,5 @@ var Core = {
 function run() {
     Core.init();
 }
+
 
