@@ -14,22 +14,25 @@
 
 
 
+//function Enemy(x,y,w,h) {
+    // TODO give certain enemies action_string
+    //      a string representing a sequence of actions
+    //      to preform... gives illusion of AI
+//    this.action_string = 'abcdefg';
+//}
+
+
+
 var MSEC_PER_SEC = 1000;
 var FRAMES_PER_SEC = 30;
 var TIME_INTERVAL = MSEC_PER_SEC / FRAMES_PER_SEC;
 var CANVAS_WIDTH = 800;
 var CANVAS_HEIGHT = 600;
 
-
-// there should be vectors of accel and vel
-// where the magnitude is capped at max value
-// not each individual var
-
 var ACCEL_START = 0.001;
 var ACCEL_STOP = 0.0;
 var MAX_VEL_MAG = 0.2;
 var FRICTION = 0.90;
-
 
 var STAR_COUNT = 25;
 
@@ -482,15 +485,6 @@ Stars.prototype.draw = function(context) {
 
 
 
-//function Enemy(x,y,w,h) {
-    // TODO give certain enemies action_string
-    //      a string representing a sequence of actions
-    //      to preform... gives illusion of AI
-//    this.action_string = 'abcdefg';
-//}
-
-
-
 // TODO add sprite to this class
 //      perhaps just pass it at draw?
 function Laser(x,y,w,h,vel_y) {
@@ -581,6 +575,18 @@ function PlayerState(invincible,in_motion) {
     this.invincible = invincible;
     this.in_motion = in_motion;
 }
+
+
+
+
+function InheritFrom(Super,Sub) {
+    for (var i in Super) {
+        if (Super.hasOwnProperty(i)) {
+            Sub.prototype[i] = Super[i];
+        }
+    }
+}
+
 
 
 
@@ -716,17 +722,19 @@ var MultiRectBody = {
 
 
 
-Player.prototype.inherit_from = function(BaseBody) {
+// will have to do some wierdo shit here
+function inherit_from(SuperClass,SubClass) {
     for (var i in Body)
-        BaseBody[i] = Body[i];
-    for (var i in BaseBody)
-        this[i] = BaseBody[i];
+        SubClass[i] = Body[i];
+    for (var i in SuperClass)
+        SubClass[i] = SuperClass[i];    
 }
 
 
 
 function Player(BaseBody) {
-    this.inherit_from(BaseBody);
+    //this.inherit_from(BaseBody);
+    //inherit_from(BaseBody,this);
     this.invincible = false;
     this.in_motion = false;
     this.cannon = new Cannon();
@@ -796,6 +804,42 @@ Player.prototype.draw = function(context) {
 
 
 
+function Enemy(BaseBody) {
+    //inherit_from(BaseBody,this);
+
+    this.sprites = [];
+    this.state = PLAYER_STATE.FLY;
+    this.init_pos(0,0);
+    this.add_sprite(
+        'img/kit2ship2flipped.png',
+        PLAYER_STATE.FLY,
+        0,0,88,110);
+}
+
+
+Enemy.prototype.update = function(elapsed_time) {
+
+}
+
+
+Enemy.prototype.init_pos = function(x,y) {
+    this.pos = new Pos2D(x,y);
+}
+
+
+Enemy.prototype.add_sprite = function(filepath,state,x,y,w,h) {
+    this.sprites[state] = new Sprite(x,y,w,h);
+    this.sprites[state].init(filepath,MediaManager);
+}
+
+
+
+Enemy.prototype.draw = function(context) {
+    this.sprites[this.state].draw(context,this.pos.x,this.pos.y);    
+}
+
+
+
 var Core = {
 
 
@@ -809,6 +853,8 @@ var Core = {
         var game_port = document.getElementById('game-port');
         game_port.textContent = '';
         game_port.appendChild(this.canvas);
+
+        this.init_inheritance();
 
         this.input = new Input();
 
@@ -833,6 +879,11 @@ var Core = {
 
         this.player.cannon.set_exit_point(104,81);
 
+        console.log(this.player);
+
+        // does this work?
+        this.enemy = new Enemy(MultiRectBody);
+        console.log(this.enemy);
 
         this.stars = new Stars(STAR_COUNT);
         var stars = new Stars(STAR_COUNT);
@@ -872,6 +923,16 @@ var Core = {
     },
 
 
+    init_inheritance: function() {
+
+        InheritFrom(Body,Player);
+        InheritFrom(MultiRectBody,Player);
+        InheritFrom(Body,Enemy);
+        InheritFrom(MultiRectBody,Enemy);
+
+    },
+
+
     handle_input: function() {
 
         if (this.input.is_key_held(KEY.RIGHT) && this.input.is_key_held(KEY.LEFT)) {
@@ -901,25 +962,11 @@ var Core = {
             this.player.stop_moving_vertically();
         }
 
-        //if (this.input.was_key_pressed(KEY.SPACE)) {
-        //    this.player.fire();
-        //} else if (this.input.was_key_released(KEY.SPACE)) {
-        //    this.player.release_trigger();
-        //}
-
         if (this.input.was_key_pressed(KEY.SPACE)) {
             this.player.fire();
         } else if (this.input.was_key_released(KEY.SPACE)) {
             this.player.release_trigger();
         }
-
-        
-        // most effective so far ...
-        //if (this.input.is_key_held(KEY.SPACE)) {
-        //    console.log('trigger pressed');
-        //} else {
-        //    console.log('trigger released');
-        //}
 
     },
 
@@ -938,6 +985,9 @@ var Core = {
         this.stars.draw(this.context);
         this.player.draw(this.context);
         //this.player.draw_collision(this.context,'#ffffff');
+
+        this.enemy.draw(this.context);
+
     },
 
 
