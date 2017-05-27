@@ -85,7 +85,7 @@ Input.prototype.key_down_event = function(event) {
 
 
 Input.prototype.key_up_event = function(event) {
-    this.pressed_keys[event.keyCode] = this.timer.getTime();
+    this.released_keys[event.keyCode] = this.timer.getTime();
     delete this.held_keys[event.keyCode];
 }
 
@@ -965,11 +965,13 @@ var Core = {
         //    this.player.release_trigger();
         //}
 
-        //if (this.input.was_key_pressed(KEY.SPACE)) {
-        //    console.log('trigger pressed');
-        //} else if (this.input.was_key_released(KEY.SPACE)) {
-        //    console.log('trigger released');
-        //}
+        if (this.input.was_key_pressed(KEY.SPACE)) {
+            console.log('trigger pressed');
+            this.player.fire();
+        } else if (this.input.was_key_released(KEY.SPACE)) {
+            this.player.release_trigger();
+            console.log('trigger released');
+        }
 
         
         // most effective so far ...
@@ -979,6 +981,7 @@ var Core = {
         //    console.log('trigger released');
         //}
         
+
 
 
     },
