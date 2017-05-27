@@ -578,13 +578,6 @@ Laser.prototype.update = function(elapsed_time) {
 }
 
 
-Laser.prototype.draw = function(context) {
-    //context.fillRect(
-    //    this.body.x,this.body.y,
-    //    this.body.w,this.body.h);
-}
-
-
 
 
 function Lasers() {
@@ -592,6 +585,7 @@ function Lasers() {
     this.color = '#ffffff';
     this.w = 2;
     this.h = 10;
+    this.released = true;
 }
 
 
@@ -607,7 +601,18 @@ Lasers.prototype.set_color = function(color) {
 
 
 Lasers.prototype.fire = function(x,y) {
-    this.lasers.push(new Laser(x,y,this.w,this.h,0.01));
+
+    if (this.released) {
+        this.lasers.push(new Laser(
+            x,y,this.w,this.h,0.01));
+        this.released = false;
+    }
+}
+
+
+Lasers.prototype.release = function() {
+    this.released = true;
+    console.log(this.released);
 }
 
 
@@ -784,18 +789,7 @@ function Player(BaseBody) {
     this.inherit_from(BaseBody);
     this.invincible = false;
     this.in_motion = false;
-
-    // does this work?
-    //this.lasers = new Lasers(3,'#ffffff');
-
-    //this.laser = new Laser(100,600,2,10,0.01);
-    //this.laser.set_color('#ff00ff');
-
-    this.lasers = new Lasers();
-    
-    //this.lasers.fire(100,600);
-
-    
+    this.lasers = new Lasers();    
 }
 
 
@@ -830,8 +824,12 @@ Player.prototype.stop_moving_vertically = function() {
 
 
 Player.prototype.fire = function() {
-    //this.lasers.fire(this.pos.x,this.pos.y);
     this.lasers.fire(this.pos.x,this.pos.y);
+}
+
+
+Player.prototype.release_trigger = function() {
+    this.lasers.release();
 }
 
 
@@ -846,28 +844,14 @@ Player.prototype.update = function(elapsed_time) {
     var delta = Physics.kinematics_delta_2d(this.accel,this.vel,elapsed_time);
     this.move_body(delta);
 
-    
-    // does this work?
-    //this.lasers.update(elapsed_time);
-
-    //this.laser.update(elapsed_time);
-    
     this.lasers.update(elapsed_time);
 
 }
 
 
 Player.prototype.draw = function(context) {
-    // does this work?
-    //this.lasers.draw(context);
-
-    //this.laser.draw(context);
-
     this.lasers.draw(context);
-
-
     this.sprites[this.state].draw(context,this.pos.x,this.pos.y);
-
 }
 
 
@@ -975,10 +959,26 @@ var Core = {
             this.player.stop_moving_vertically();
         }
 
+        //if (this.input.was_key_pressed(KEY.SPACE)) {
+        //    this.player.fire();
+        //} else if (this.input.was_key_released(KEY.SPACE)) {
+        //    this.player.release_trigger();
+        //}
 
-        if (this.input.was_key_pressed(KEY.SPACE)) {
-            this.player.fire();
-        }
+        //if (this.input.was_key_pressed(KEY.SPACE)) {
+        //    console.log('trigger pressed');
+        //} else if (this.input.was_key_released(KEY.SPACE)) {
+        //    console.log('trigger released');
+        //}
+
+        
+        // most effective so far ...
+        //if (this.input.is_key_held(KEY.SPACE)) {
+        //    console.log('trigger pressed');
+        //} else {
+        //    console.log('trigger released');
+        //}
+        
 
 
     },
