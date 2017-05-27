@@ -33,6 +33,10 @@ var FRICTION = 0.90;
 
 var STAR_COUNT = 25;
 
+var LASER_WIDTH = 2;
+var LASER_HEIGHT = 10;
+var LASER_VELOCITY = 0.3;
+
 
 var KEY = Object({
     UP:38,
@@ -478,84 +482,6 @@ Stars.prototype.draw = function(context) {
 
 
 
-
-/*
-// WORK ON THIS BELOW!
-// this needs some work!
-
-function Lasers(max,color) {
-    this.fired = [];
-    this.max = max;
-    this.set_size(2,10);
-    this.color = color;
-}
-
-
-Lasers.prototype.set_size = function(w,h) {
-    this.w = w;
-    this.h = h;
-}
-
-
-Lasers.prototype.init_vel = function(vel_y) {
-    this.vel = new Vec2D(0,-vel_y);
-}
-
-
-// pass in player coord
-Lasers.prototype.fire = function(x,y) {
-    if (this.fired.length <= this.max) {
-        this.fired.push(new Laser(
-            x,y,this.w,this.h,this.vel));
-    }
-}
-
-
-Lasers.prototype.update = function(elapsed_time) {
-    var len = this.fired.length;
-    for (var i = 0; i < len; ++i) {
-        var laser = this.fired[i];
-        if (laser.pos.y > 0) {
-            laser.update(elapsed_time);
-        } else {
-            this.fired.splice(i,1);
-        }
-    }
-}
-
-
-Lasers.prototype.draw = function(context) {
-    var len = this.fired.length;
-    for (var i = 0; i < len; ++i) {
-        this.fired[i].draw(context);
-    }
-}
-
-
-function Laser(x,y,w,h,vel) {
-    this.pos = new Pos2D(x,y);
-    this.vel = vel;
-    this.w = w;
-    this.h = h;
-}
-
-
-Laser.prototype.update = function(elapsed_time) {
-    this.pos.y += this.vel.y*elapsed_time;
-}
-
-
-Laser.prototype.draw = function(context) {
-    context.fillRect(
-        this.pos.x,this.pos.y,
-        this.w,this.h);
-}
-
-// WORK ON THE ABOVE
-
-*/
-
-
 //function Enemy(x,y,w,h) {
     // TODO give certain enemies action_string
     //      a string representing a sequence of actions
@@ -565,79 +491,87 @@ Laser.prototype.draw = function(context) {
 
 
 
+// TODO add sprite to this class
+//      perhaps just pass it at draw?
 function Laser(x,y,w,h,vel_y) {
-    this.pos = new Pos2D(x,y);
+    this.body = new Rectangle(x,y,w,h);
     this.vel = new Vec2D(0,vel_y);
-    this.w = w;
-    this.h = y;
 }
 
 
 Laser.prototype.update = function(elapsed_time) {
-    this.pos.y -= this.vel.y * elapsed_time;
+    this.body.y -= this.vel.y * elapsed_time;
+}
+
+
+Laser.prototype.draw = function(context) {
+    context.fillRect(
+        this.body.x,this.body.y,
+        this.body.w,this.body.h);
 }
 
 
 
-function Lasers() {
+function Cannon() {
     this.lasers = [];
+    this.w = LASER_WIDTH;
+    this.h = LASER_HEIGHT;
+    this.vel = LASER_VELOCITY;
     this.color = '#ffffff';
-    this.w = 2;
-    this.h = 10;
     this.released = true;
+    this.x_offset = 0;
 }
 
 
-Lasers.prototype.set_exit_point = function(w_ship,h_ship) {
+Cannon.prototype.set_exit_point = function(w_ship,h_ship) {
     this.x_offset = w_ship/2 - this.w/2;
 }
 
 
-Lasers.prototype.set_size = function(w,h) {
+Cannon.prototype.set_size = function(w,h) {
     this.w = w;
     this.h = h;
 }
 
 
-Lasers.prototype.set_color = function(color) {
+Cannon.prototype.set_color = function(color) {
     this.color = color;
 }
 
 
-// make more injections in lasers class
-Lasers.prototype.fire = function(x,y) {
+// make more injections in Cannon class
+Cannon.prototype.fire = function(x,y) {
     if (this.released) {
         this.lasers.push(new Laser(
-            this.x_offset+x,y,this.w,this.h,0.3));
+            this.x_offset+x,y,
+            this.w,this.h,
+            this.vel));
         this.released = false;
     }
 }
 
 
-Lasers.prototype.release = function() {
+Cannon.prototype.release = function() {
     this.released = true;
 }
 
 
-Lasers.prototype.update = function(elapsed_time) {
+Cannon.prototype.update = function(elapsed_time) {
     for (var i = 0; i < this.lasers.length; ++i) {
         this.lasers[i].update(elapsed_time);
-        if (this.lasers[i].pos.y+this.h < 0) {
-            console.log(this.lasers[i].pos.y+this.h);
+        if (this.lasers[i].body.y+this.h < 0) {
             this.lasers.splice(i--,1);
         }
     }
 }
 
 
-Lasers.prototype.draw = function(context) {
+// TODO add a sprite for this class
+Cannon.prototype.draw = function(context) {
     context.fillStyle = this.color;
     var len = this.lasers.length;
     for (var i = 0; i < len; ++i) {
-        context.fillRect(
-            this.lasers[i].pos.x,
-            this.lasers[i].pos.y,
-            this.w,this.h);
+        this.lasers[i].draw(context);
     }
 }
 
@@ -782,7 +716,6 @@ var MultiRectBody = {
 
 
 
-// pass args through ctor
 Player.prototype.inherit_from = function(BaseBody) {
     for (var i in Body)
         BaseBody[i] = Body[i];
@@ -796,7 +729,7 @@ function Player(BaseBody) {
     this.inherit_from(BaseBody);
     this.invincible = false;
     this.in_motion = false;
-    this.lasers = new Lasers();
+    this.cannon = new Cannon();
 }
 
 
@@ -831,12 +764,12 @@ Player.prototype.stop_moving_vertically = function() {
 
 
 Player.prototype.fire = function() {
-    this.lasers.fire(this.pos.x,this.pos.y);
+    this.cannon.fire(this.pos.x,this.pos.y);
 }
 
 
 Player.prototype.release_trigger = function() {
-    this.lasers.release();
+    this.cannon.release();
 }
 
 
@@ -851,13 +784,13 @@ Player.prototype.update = function(elapsed_time) {
     var delta = Physics.kinematics_delta_2d(this.accel,this.vel,elapsed_time);
     this.move_body(delta);
 
-    this.lasers.update(elapsed_time);
+    this.cannon.update(elapsed_time);
 
 }
 
 
 Player.prototype.draw = function(context) {
-    this.lasers.draw(context);
+    this.cannon.draw(context);
     this.sprites[this.state].draw(context,this.pos.x,this.pos.y);
 }
 
@@ -892,13 +825,13 @@ var Core = {
         this.player.set_state(PLAYER_STATE.FLY);
         this.player.add_sprite('img/ship3 (3).png',
             PLAYER_STATE.FLY,0,0,104,81);
-        this.player.init_pos(300,200);
+        this.player.init_pos(300,500);
         this.player.add_collision(20,16,10,58);
         this.player.add_collision(74,16,10,58);
         this.player.add_collision(30,26,44,16);
         this.player.add_collision(42,10,20,16);
 
-        this.player.lasers.set_exit_point(104,81);
+        this.player.cannon.set_exit_point(104,81);
 
 
         this.stars = new Stars(STAR_COUNT);
@@ -1004,7 +937,7 @@ var Core = {
         //this.background.draw(this.context,this.canvas);
         this.stars.draw(this.context);
         this.player.draw(this.context);
-        this.player.draw_collision(this.context,'#ffffff');
+        //this.player.draw_collision(this.context,'#ffffff');
     },
 
 
