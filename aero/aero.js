@@ -29,7 +29,7 @@ var TIME_INTERVAL = MSEC_PER_SEC / FRAMES_PER_SEC;
 var CANVAS_WIDTH = 800;
 var CANVAS_HEIGHT = 600;
 
-var ACCEL_START = 0.001;
+var ACCEL_START = 0.0006;
 var ACCEL_STOP = 0.0;
 var MAX_VEL_MAG = 0.2;
 var FRICTION = 0.90;
@@ -571,14 +571,8 @@ Cannon.prototype.draw = function(context) {
 
 
 
-function PlayerState(invincible,in_motion) {
-    this.invincible = invincible;
-    this.in_motion = in_motion;
-}
-
-
-
-
+// TODO make a list of super classes to inherit from
+//      and set sub prototype to each index
 function InheritFrom(Super,Sub) {
     for (var i in Super) {
         if (Super.hasOwnProperty(i)) {
@@ -589,17 +583,14 @@ function InheritFrom(Super,Sub) {
 
 
 
-
 var Body = {
 
 
-    sprites:{},
-
-    state:0,
-
-    vel: new Vec2D(0,0),
-
-    accel: new Vec2D(0,0),
+    init_vectors: function(x,y) {
+        this.pos = new Pos2D(x,y);
+        this.vel = new Vec2D(0,0);
+        this.accel = new Vec2D(0,0);
+    },
 
 
     init_pos: function(x,y) {
@@ -722,19 +713,11 @@ var MultiRectBody = {
 
 
 
-// will have to do some wierdo shit here
-function inherit_from(SuperClass,SubClass) {
-    for (var i in Body)
-        SubClass[i] = Body[i];
-    for (var i in SuperClass)
-        SubClass[i] = SuperClass[i];    
-}
-
-
-
-function Player(BaseBody) {
+function Player(x,y) {
     //this.inherit_from(BaseBody);
     //inherit_from(BaseBody,this);
+    this.init_vectors(x,y);
+    this.sprites = {};
     this.invincible = false;
     this.in_motion = false;
     this.cannon = new Cannon();
@@ -804,34 +787,18 @@ Player.prototype.draw = function(context) {
 
 
 
-function Enemy(BaseBody) {
-    //inherit_from(BaseBody,this);
-
-    this.sprites = [];
+function Enemy(x,y) {
+    
+    this.sprites = {};
     this.state = PLAYER_STATE.FLY;
-    this.init_pos(0,0);
-    this.add_sprite(
-        'img/kit2ship2flipped.png',
-        PLAYER_STATE.FLY,
-        0,0,88,110);
+    this.init_vectors(x,y);
+    
 }
 
 
 Enemy.prototype.update = function(elapsed_time) {
-
+    this.pos.y += elapsed_time * 0.01;
 }
-
-
-Enemy.prototype.init_pos = function(x,y) {
-    this.pos = new Pos2D(x,y);
-}
-
-
-Enemy.prototype.add_sprite = function(filepath,state,x,y,w,h) {
-    this.sprites[state] = new Sprite(x,y,w,h);
-    this.sprites[state].init(filepath,MediaManager);
-}
-
 
 
 Enemy.prototype.draw = function(context) {
@@ -854,9 +821,10 @@ var Core = {
         game_port.textContent = '';
         game_port.appendChild(this.canvas);
 
-        this.init_inheritance();
 
         this.input = new Input();
+
+        this.init_inheritance();
 
 
         //this.player = new Player(RectBody);
@@ -867,11 +835,11 @@ var Core = {
         //this.player.init_collision(20,10,64,61);
         
 
-        this.player = new Player(MultiRectBody);
+        this.player = new Player(300,500);
         this.player.set_state(PLAYER_STATE.FLY);
         this.player.add_sprite('img/ship3 (3).png',
             PLAYER_STATE.FLY,0,0,104,81);
-        this.player.init_pos(300,500);
+        //this.player.init_pos(300,500);
         this.player.add_collision(20,16,10,58);
         this.player.add_collision(74,16,10,58);
         this.player.add_collision(30,26,44,16);
@@ -879,11 +847,12 @@ var Core = {
 
         this.player.cannon.set_exit_point(104,81);
 
-        console.log(this.player);
 
-        // does this work?
-        this.enemy = new Enemy(MultiRectBody);
-        console.log(this.enemy);
+        this.enemy = new Enemy(400,-100);
+        this.enemy.add_sprite(
+            'img/kit2ship2flipped.png',
+            PLAYER_STATE.FLY,0,0,88,110);
+        
 
         this.stars = new Stars(STAR_COUNT);
         var stars = new Stars(STAR_COUNT);
@@ -974,6 +943,7 @@ var Core = {
     update: function(elapsed_time) {
         this.player.update(elapsed_time);
         //this.background.update(elapsed_time);
+        this.enemy.update(elapsed_time);
         this.stars.update(elapsed_time);
         this.input.begin_new_frame();
     },
