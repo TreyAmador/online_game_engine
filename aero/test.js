@@ -4,9 +4,155 @@
 
 
 
+
+var Body = {
+
+
+    init_vectors: function(x,y) {
+        this.pos = new Pos2D(x,y);
+        this.vel = new Vec2D(0,0);
+        this.accel = new Vec2D(0,0);
+    },
+
+
+    init_pos: function(x,y) {
+        this.pos = new Pos2D(x,y);
+    },
+
+
+    init_vel: function() {
+        this.vel = new Vec2D(0,0);
+    },
+
+
+    init_accel: function() {
+        this.accel = new Vec2D(0,0);
+    },
+
+
+    set_pos: function(pos) {
+        this.pos.x = pos.x;
+        this.pos.y = pos.y;
+    },
+
+
+    set_state: function(state) {
+        this.state = state;
+    },
+
+
+    add_sprite: function(filepath,state,x,y,w,h) {
+        this.sprites[state] = new Sprite(x,y,w,h);
+        this.sprites[state].init(filepath,MediaManager);
+    },
+
+
+};
+
+
+
+var ASTEROID_STATE = Object.freeze({
+    ROLL: 0
+});
+
+
+
+// TODO write asteroid class with various sprites
+//      and various 'skeleton configs'
+//      create a frame class which holds both sprite and skeleton
+//      then refactor to understand new body and circle class
+
+
+
+
+var RectBody = {
+
+
+    init_collision: function(x,y,w,h) {
+        this.collision = new Rectangle(
+            this.pos.x+x,this.pos.y+y,w,h);
+    },
+
+
+    init_collision_offset: function(left,right,top,bottom) {
+        // TODO implement this function (?)
+    },
+
+
+    move_body: function(offset) {
+        this.pos.x += offset.x;
+        this.pos.y += offset.y;
+        this.collision.x += offset.x;
+        this.collision.y += offset.y;
+    },
+
+
+    draw_collision: function(context,color) {
+
+        context.strokeStyle = color;
+        context.strokeRect(
+            this.collision.x,
+            this.collision.y,
+            this.collision.w,
+            this.collision.h);
+
+    },
+
+
+};
+
+
+
+var MultiRectBody = {
+
+
+    add_collision: function(x,y,w,h) {
+        
+        this.collisions.push(new Rectangle(
+            this.pos.x+x,this.pos.y+y,w,h));
+        
+    },
+
+
+    move_body: function(offset) {
+
+        this.pos.x += offset.x;
+        this.pos.y += offset.y;
+        var len = this.collisions.length;
+        for (var i = 0; i < len; ++i) {
+            this.collisions[i].x += offset.x;
+            this.collisions[i].y += offset.y;
+        }
+
+    },
+
+
+    draw_collision: function(context,color) {
+
+        context.strokeStyle = color;
+
+        var len = this.collisions.length;
+        for (var i = 0; i < len; ++i) {
+            context.strokeRect(
+                this.collisions[i].x,
+                this.collisions[i].y,
+                this.collisions[i].w,
+                this.collisions[i].h);
+        }
+
+    },
+
+
+};
+
+
+
+
+
+
 // TODO add a timer to entire entity
 //      such as player or enemy
-function AnimatedSprite() {
+function Sprite() {
     this.frames = [];
     this.frame_no = 0;
 }
@@ -14,29 +160,29 @@ function AnimatedSprite() {
 
 // TODO allow user to add a single sprite 
 //      animation from multiple filepaths
-AnimatedSprite.prototype.init = function(filepath,manager) {
+Sprite.prototype.init = function(filepath,manager) {
     this.img = manager.load(filepath);
 }
 
 
-AnimatedSprite.prototype.single_frame_rect = function(frame) {
+Sprite.prototype.single_frame_rect = function(frame) {
     this.frames.push(frame);
 }
 
 
-AnimatedSprite.prototype.clear = function() {
+Sprite.prototype.clear = function() {
     this.frames = [];
     this.frame_no = 0;
 }
 
 
 // this must be updated to be more versatile
-AnimatedSprite.prototype.update = function(elapsed_time) {
+Sprite.prototype.update = function(elapsed_time) {
     //this.frame_no = ++this.frame_no % this.frames.length;
 }
 
 
-AnimatedSprite.prototype.draw = function(context,frame_no,x,y) {
+Sprite.prototype.draw = function(context,frame_no,x,y) {
     var rect = this.frames[frame_no];
     context.drawImage(this.img,
         rect.x,rect.y,rect.w,rect.h,
@@ -46,7 +192,7 @@ AnimatedSprite.prototype.draw = function(context,frame_no,x,y) {
 
 
 function Anatomy() {
-    this.sprites = new AnimatedSprite();
+    this.sprites = new Sprite();
     this.collisions = [];
     this.frame_no = 0;
 }
@@ -67,6 +213,7 @@ Anatomy.prototype.add_frames_rect = function(frames,collisions) {
 }
 
 
+// probably not necessary now
 Anatomy.prototype.rectify_collision = function(collisions,pos) {
     var len = collisions.length;
     for (var i = 0; i < len; ++i) {
@@ -83,6 +230,15 @@ Anatomy.prototype.rectify_collision = function(collisions,pos) {
 Anatomy.prototype.detect_collisions = function(pos) {
     var clsn_rect = this.collisions[this.frame_no];
     console.log(clsn_rect.x+pos.x,clsn_rect.y+pos.y);
+}
+
+
+Anatomy.prototype.get_collision_frame = function(pos) {
+    var rect = this.collisions[this.frame_no];
+    var clsn = new Rectangle(
+        rect.x+pos.x,rect.y+pos.y,
+        rect.w,rect.h);
+    return clsn;
 }
 
 
@@ -115,10 +271,10 @@ var ASTR = Object.freeze({
 
 
 
-function Pos2D(x,y) {
-    this.x = x;
-    this.y = y;
-}
+//function Pos2D(x,y) {
+//    this.x = x;
+//    this.y = y;
+//}
 
 
 
@@ -154,7 +310,6 @@ Asteroid.prototype.move = function(delta) {
 
 Asteroid.prototype.update = function(elapsed_time) {
     // TODO will update position and velocity and acceleration
-    //this.pos.y += 1;
     this.anatomy[this.state].update(elapsed_time);
 }
 
@@ -171,7 +326,124 @@ Asteroid.prototype.draw_collision = function(context) {
 
 
 
-function testing() {
+
+function Background(x,y) {
+
+    // TODO add vel,acc vector to background
+    //      this allow dynamic map movement
+
+    this.sprites = [];
+    this.sprite_no = 0;
+
+    this.pos = new Pos2D(x,y);
+    this.orig_pos = new Pos2D(x,y);
+    this.vel = new Vec2D(0,0);
+
+    this.spatiality = new Rectangle(0,0,0,0);
+    this.loopable = false;
+
+    // this is just a test, this is only a test
+    this.curr = 0;
+    this.next = 1;
+
+}
+
+
+Background.prototype.set_spatiality = function(x,y,w,h) {
+    this.spatiality = new Rectangle(x,y,w,h);
+}
+
+
+Background.prototype.set_size = function(w,h) {
+    //this.rect.w = w;
+    //this.rect.h = h;
+}
+
+
+// TODO pass in x,y starting pos, canvas width and canvas height
+//      or just the entirety of the image and only
+//      cut the image when you draw it
+Background.prototype.add_sprite = function(x,y,w,h,filepath) {
+    var sprite = new Sprite(x,y,w,h);
+    sprite.init(filepath,MediaManager);
+    this.sprites.push(sprite);
+}
+
+
+Background.prototype.set_scroll_speed = function(x,y) {
+    this.vel.x = x;
+    this.vel.y = y;
+}
+
+
+// this probably needs to be revised
+Background.prototype.set_loopable = function(loopable) {
+    this.loopable = loopable;
+    if (this.loopable && this.sprites.length == 1) {
+        this.sprites.push(this.sprites[0]);
+    }
+}
+
+
+// TODO set acceleration that slows down at designated points
+//      such as, slowing scroll when reach end of screen
+Background.prototype.update = function(elapsed_time) {
+
+
+    // TODO check movement of left to right as well
+    // TODO put this on a 'treadmill' rather than reset
+
+    
+    // calling this.vel.y is prone to error
+    if (this.loopable) {
+        if (Math.ceil(this.pos.y) > 0) {
+            var temp = this.curr;
+            this.curr = this.next;
+            this.next = temp;
+            this.pos.y = this.orig_pos.y;
+        } else {
+            this.pos.x += this.vel.x * elapsed_time;
+            this.pos.y += this.vel.y * elapsed_time;
+        }
+    }
+
+
+}
+
+
+Background.prototype.draw = function(context,canvas) {
+
+    //context.drawImage(this.img,
+    //    this.rect.x,this.rect.y,
+    //    this.rect.w,this.rect.h,
+    //    0,0,canvas.width,canvas.height);
+
+    //this.sprites[this.sprite_no].draw(context,this.pos.x,this.pos.y);
+    // should differentiate the draw here, as it should
+    // not be wider than the canvas element
+
+    //context.drawImage(this.sprites[this.sprite_no],
+    //    this.rect.x,this.rect.y,
+    //    this.rect.w,this.rect.h,
+    //    0,0,canvas.width,canvas.height);
+
+
+    // there is just an ever-so-slight jump ...
+    if (this.loopable) {
+        //console.log(this.curr);
+        var h = this.sprites[this.curr].body.h;
+        this.sprites[this.curr].draw(context,this.pos.x,this.pos.y);
+        this.sprites[this.next].draw(context,this.pos.x,this.pos.y+h);
+    }
+
+
+}
+
+
+
+
+
+function run() {
 
 
     this.canvas = document.createElement('canvas');
@@ -184,6 +456,16 @@ function testing() {
     game_port.appendChild(this.canvas);
 
 
+    //this.background = new Background(-1200,this.canvas.height-5120);
+    //this.background.set_spatiality(0,0,2880,5120);
+    //this.background.add_sprite(0,0,
+    //    this.background.spatiality.w,
+    //    this.background.spatiality.h,
+    //    'img/carina-nebulae-ref.png');
+    //this.background.set_scroll_speed(0,0.01);
+    //this.background.set_if_loopable(false);
+
+
     var w = 128;
     var h = 128;
     var sprites = [];
@@ -191,7 +473,7 @@ function testing() {
     for (var r = 0; r < 4; ++r) {
         for (var c = 0; c < 8; ++c) {
             sprites.push(new Rectangle(c*w,r*h,w,h));
-            collisions.push(new Rectangle(10,10,w-20,h-20));
+            collisions.push(new Rectangle(20,20,w-40,h-40));
         }
     }
 
@@ -214,44 +496,4 @@ function testing() {
 
 
 
-
-/*
-
-function output(vec,ans) {
-    if (vec === ans)
-        console.log(vec,'correct.');
-    else
-        console.log(vec,'incorrect');
-}
-
-
-function test_vec2d() {
-    var a = new Vec2D(3,4);
-    //output(a.magnitude(),5);
-
-    //var max = 3;
-    //var mag = a.magnitude();
-    //console.log(mag);
-    //a.normalize(3/5);
-    //console.log(a.magnitude());
-    
-    var max = 4;
-    //var b = new Vec2D(6,9);
-    //var mag = b.magnitude();
-    //b.normalize(max/mag);
-    //output(b.magnitude(),max);
-
-    var c = new Vec2D(-9,2);
-    console.log(c.x,c.y);
-    c.normalize(max);
-    console.log(c.x,c.y);
-    output(c.magnitude(),max);
-
-    
-}
-
-//test_vec2d();
-
-
-*/
 

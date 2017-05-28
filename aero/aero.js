@@ -276,6 +276,8 @@ var Calculator = {
 
 
 
+/*
+
 // TODO add offset to sprite itself
 function Sprite(x,y,w,h) {
     this.body = new Rectangle(x,y,w,h);
@@ -337,118 +339,49 @@ Sprite.prototype.draw = function(context,x,y) {
 
 }
 
+*/
 
-function Background(x,y) {
 
-    // TODO add vel,acc vector to background
-    //      this allow dynamic map movement
-
-    this.sprites = [];
-    this.sprite_no = 0;
-
-    this.pos = new Pos2D(x,y);
-    this.orig_pos = new Pos2D(x,y);
-    this.vel = new Vec2D(0,0);
-
-    this.spatiality = new Rectangle(0,0,0,0);
-    this.loopable = false;
-
-    // this is just a test, this is only a test
-    this.curr = 0;
-    this.next = 1;
-
+// TODO add a timer to entire entity
+//      such as player or enemy
+function Sprite() {
+    this.frames = [];
+    this.frame_no = 0;
 }
 
 
-Background.prototype.set_spatiality = function(x,y,w,h) {
-    this.spatiality = new Rectangle(x,y,w,h);
+// TODO allow user to add a single sprite 
+//      animation from multiple filepaths
+Sprite.prototype.init = function(filepath,manager) {
+    this.img = manager.load(filepath);
 }
 
 
-Background.prototype.set_size = function(w,h) {
-    //this.rect.w = w;
-    //this.rect.h = h;
+Sprite.prototype.single_frame_rect = function(frame) {
+    this.frames.push(frame);
 }
 
 
-// TODO pass in x,y starting pos, canvas width and canvas height
-//      or just the entirety of the image and only
-//      cut the image when you draw it
-Background.prototype.add_sprite = function(x,y,w,h,filepath) {
-    var sprite = new Sprite(x,y,w,h);
-    sprite.init(filepath,MediaManager);
-    this.sprites.push(sprite);
+Sprite.prototype.clear = function() {
+    this.frames = [];
+    this.frame_no = 0;
 }
 
 
-Background.prototype.set_scroll_speed = function(x,y) {
-    this.vel.x = x;
-    this.vel.y = y;
+// this must be updated to be more versatile
+Sprite.prototype.update = function(elapsed_time) {
+    //this.frame_no = ++this.frame_no % this.frames.length;
 }
 
 
-// this probably needs to be revised
-Background.prototype.set_loopable = function(loopable) {
-    this.loopable = loopable;
-    if (this.loopable && this.sprites.length == 1) {
-        this.sprites.push(this.sprites[0]);
-    }
+Sprite.prototype.draw = function(context,frame_no,x,y) {
+    var rect = this.frames[frame_no];
+    context.drawImage(this.img,
+        rect.x,rect.y,rect.w,rect.h,
+        x,y,rect.w,rect.h);
 }
 
 
-// TODO set acceleration that slows down at designated points
-//      such as, slowing scroll when reach end of screen
-Background.prototype.update = function(elapsed_time) {
-
-
-    // TODO check movement of left to right as well
-    // TODO put this on a 'treadmill' rather than reset
-
-    
-    // calling this.vel.y is prone to error
-    if (this.loopable) {
-        if (Math.ceil(this.pos.y) > 0) {
-            var temp = this.curr;
-            this.curr = this.next;
-            this.next = temp;
-            this.pos.y = this.orig_pos.y;
-        } else {
-            this.pos.x += this.vel.x * elapsed_time;
-            this.pos.y += this.vel.y * elapsed_time;
-        }
-    }
-
-
-}
-
-
-Background.prototype.draw = function(context,canvas) {
-
-    //context.drawImage(this.img,
-    //    this.rect.x,this.rect.y,
-    //    this.rect.w,this.rect.h,
-    //    0,0,canvas.width,canvas.height);
-
-    //this.sprites[this.sprite_no].draw(context,this.pos.x,this.pos.y);
-    // should differentiate the draw here, as it should
-    // not be wider than the canvas element
-
-    //context.drawImage(this.sprites[this.sprite_no],
-    //    this.rect.x,this.rect.y,
-    //    this.rect.w,this.rect.h,
-    //    0,0,canvas.width,canvas.height);
-
-
-    // there is just an ever-so-slight jump ...
-    if (this.loopable) {
-        //console.log(this.curr);
-        var h = this.sprites[this.curr].body.h;
-        this.sprites[this.curr].draw(context,this.pos.x,this.pos.y);
-        this.sprites[this.next].draw(context,this.pos.x,this.pos.y+h);
-    }
-
-
-}
 
 
 
@@ -625,146 +558,6 @@ function InheritFrom(Super,Sub) {
 
 
 
-var Body = {
-
-
-    init_vectors: function(x,y) {
-        this.pos = new Pos2D(x,y);
-        this.vel = new Vec2D(0,0);
-        this.accel = new Vec2D(0,0);
-    },
-
-
-    init_pos: function(x,y) {
-        this.pos = new Pos2D(x,y);
-    },
-
-
-    init_vel: function() {
-        this.vel = new Vec2D(0,0);
-    },
-
-
-    init_accel: function() {
-        this.accel = new Vec2D(0,0);
-    },
-
-
-    set_pos: function(pos) {
-        this.pos.x = pos.x;
-        this.pos.y = pos.y;
-    },
-
-
-    set_state: function(state) {
-        this.state = state;
-    },
-
-
-    add_sprite: function(filepath,state,x,y,w,h) {
-        this.sprites[state] = new Sprite(x,y,w,h);
-        this.sprites[state].init(filepath,MediaManager);
-    },
-
-
-};
-
-
-
-var ASTEROID_STATE = Object.freeze({
-    ROLL: 0
-});
-
-
-
-// TODO write asteroid class with various sprites
-//      and various 'skeleton configs'
-//      create a frame class which holds both sprite and skeleton
-//      then refactor to understand new body and circle class
-
-
-
-
-var RectBody = {
-
-
-    init_collision: function(x,y,w,h) {
-        this.collision = new Rectangle(
-            this.pos.x+x,this.pos.y+y,w,h);
-    },
-
-
-    init_collision_offset: function(left,right,top,bottom) {
-        // TODO implement this function (?)
-    },
-
-
-    move_body: function(offset) {
-        this.pos.x += offset.x;
-        this.pos.y += offset.y;
-        this.collision.x += offset.x;
-        this.collision.y += offset.y;
-    },
-
-
-    draw_collision: function(context,color) {
-
-        context.strokeStyle = color;
-        context.strokeRect(
-            this.collision.x,
-            this.collision.y,
-            this.collision.w,
-            this.collision.h);
-
-    },
-
-
-};
-
-
-
-var MultiRectBody = {
-
-
-    add_collision: function(x,y,w,h) {
-        
-        this.collisions.push(new Rectangle(
-            this.pos.x+x,this.pos.y+y,w,h));
-        
-    },
-
-
-    move_body: function(offset) {
-
-        this.pos.x += offset.x;
-        this.pos.y += offset.y;
-        var len = this.collisions.length;
-        for (var i = 0; i < len; ++i) {
-            this.collisions[i].x += offset.x;
-            this.collisions[i].y += offset.y;
-        }
-
-    },
-
-
-    draw_collision: function(context,color) {
-
-        context.strokeStyle = color;
-
-        var len = this.collisions.length;
-        for (var i = 0; i < len; ++i) {
-            context.strokeRect(
-                this.collisions[i].x,
-                this.collisions[i].y,
-                this.collisions[i].w,
-                this.collisions[i].h);
-        }
-
-    },
-
-
-};
-
 
 // TODO create circle class that will embody asteroids
 //      and can be shot and bounce off from laser
@@ -772,15 +565,134 @@ var MultiRectBody = {
 
 
 
+function Anatomy() {
+    this.sprites = new Sprite();
+    this.collisions = [];
+    this.frame_no = 0;
+}
+
+
+Anatomy.prototype.init = function(filepath,manager) {
+    this.sprites.init(filepath,manager);
+}
+
+
+// TODO check index of collisions to ensure it not out of index
+Anatomy.prototype.add_frames_rect = function(frames,collisions) {
+    var len = frames.length;
+    for (var i = 0; i < len; ++i) {
+        this.sprites.single_frame_rect(frames[i]);
+        this.collisions.push(collisions[i]);
+    }
+}
+
+
+// probably not necessary now
+Anatomy.prototype.rectify_collision = function(collisions,pos) {
+    var len = collisions.length;
+    for (var i = 0; i < len; ++i) {
+        collisions[i].x += pos.x;
+        collisions[i].y += pos.y;
+    }
+}
+
+
+Anatomy.prototype.move_body = function(pos) {
+
+}
+
+// REMEMBER! collision rects are offsets from sprite
+// this will also be the case with physics calculations
+// TODO make collision rects absolute in world space (?)
+Anatomy.prototype.detect_collisions = function(pos) {
+    var clsn_rect = this.collisions[this.frame_no];
+    console.log(clsn_rect.x+pos.x,clsn_rect.y+pos.y);
+}
+
+
+Anatomy.prototype.get_collision_frame = function(pos) {
+    var rect = this.collisions[this.frame_no];
+    var clsn = new Rectangle(
+        rect.x+pos.x,rect.y+pos.y,
+        rect.w,rect.h);
+    return clsn;
+}
+
+
+// TODO reviese this to be less error prone
+//      use something other than this.collisions.lenght;
+Anatomy.prototype.update = function(elapsed_time) {
+    this.frame_no = ++this.frame_no % this.collisions.length;
+    this.sprites.update(elapsed_time);
+}
+
+
+Anatomy.prototype.draw = function(context,x,y) {
+    this.sprites.draw(context,this.frame_no,x,y);
+}
+
+
+Anatomy.prototype.draw_collision = function(context,x,y) {
+
+    var col = this.collisions[this.frame_no];
+    context.strokeStyle = '#ffffff';
+    context.strokeRect(col.x+x,col.y+y,col.w,col.h);
+    
+}
+
+
+
+
+
+
 function Player(x,y) {
 
+    //this.sprites = {};
+    //this.collisions = [];
+    this.anatomy = {};
+    this.state = PLAYER_STATE.FLY;
     this.init_vectors(x,y);
-    this.sprites = {};
-    this.collisions = [];
+
+    //console.log(this.pos,this.vel,this.accel);
+    
     this.invincible = false;
     this.in_motion = false;
     this.cannon = new Cannon();
 
+}
+
+
+Player.prototype.init_vectors = function(x,y) {
+    this.pos = new Pos2D(x,y);
+    this.vel = new Vec2D(0,0);
+    this.accel = new Vec2D(0,0);
+    //console.log(this.pos,this.vec,this.accel);
+}
+
+
+Player.prototype.add_frame = function(filepath,state,sprites,collisions) {
+    var anatomy = new Anatomy();
+    anatomy.init(filepath,MediaManager);
+    anatomy.add_frames_rect(sprites,collisions);
+    this.anatomy[state] = anatomy;
+}
+
+
+Player.prototype.set_state = function(state) {
+    this.state = state;
+}
+
+
+Player.prototype.set_pos = function(x,y) {
+    this.pos.x = x;
+    this.pos.y = y;
+}
+
+
+Player.prototype.move_body = function(delta) {
+    //this.anatomy[this.state].move_body(delta);
+    this.pos.x += delta.x;
+    this.pos.y += delta.y;
 }
 
 
@@ -848,7 +760,12 @@ Player.prototype.update = function(elapsed_time) {
 
 Player.prototype.draw = function(context) {
     this.cannon.draw(context);
-    this.sprites[this.state].draw(context,this.pos.x,this.pos.y);
+    this.anatomy[this.state].draw(context,this.pos.x,this.pos.y);
+}
+
+
+Player.prototype.draw_collision = function(context) {
+    this.anatomy[this.state].draw_collision(context,this.pos.x,this.pos.y);
 }
 
 
@@ -902,7 +819,7 @@ var Core = {
         game_port.appendChild(this.canvas);
 
 
-        this.init_inheritance();
+        //this.init_inheritance();
 
         this.input = new Input();
 
@@ -911,34 +828,30 @@ var Core = {
         
         this.player = new Player(300,500);
         this.player.set_state(PLAYER_STATE.FLY);
-        this.player.add_sprite('img/ship3 (3).png',
-            PLAYER_STATE.FLY,0,0,104,81);
-        this.player.add_collision(20,16,10,58);
-        this.player.add_collision(74,16,10,58);
-        this.player.add_collision(30,26,44,16);
-        this.player.add_collision(42,10,20,16);
+        this.player.add_frame('img/ship3 (3).png',PLAYER_STATE.FLY,
+            [new Rectangle(0,0,104,81)],[new Rectangle(20,16,64,58)]);
         this.player.cannon.set_exit_point(104,81);
 
 
-        this.enemy = new Enemy(400,-100);
-        this.enemy.set_state(PLAYER_STATE.FLY);
-        this.enemy.add_sprite('img/kit2ship2flipped.png',
-            PLAYER_STATE.FLY,0,0,88,110);
-        this.enemy.add_collision(24,10,40,90);
+        //this.player.add_sprite('img/ship3 (3).png',
+        //    PLAYER_STATE.FLY,0,0,104,81);
+        //this.player.add_collision(20,16,10,58);
+        //this.player.add_collision(74,16,10,58);
+        //this.player.add_collision(30,26,44,16);
+        //this.player.add_collision(42,10,20,16);
+        //this.player.cannon.set_exit_point(104,81);
+
+
+        //this.enemy = new Enemy(400,-100);
+        //this.enemy.set_state(PLAYER_STATE.FLY);
+        //this.enemy.add_sprite('img/kit2ship2flipped.png',
+        //    PLAYER_STATE.FLY,0,0,88,110);
+        //this.enemy.add_collision(24,10,40,90);
         
 
         //var world = new World(STAR_COUNT);
 
 
-        //this.background = new Background(-1200,this.canvas.height-5120);
-        //this.background.set_spatiality(0,0,2880,5120);
-        //this.background.add_sprite(0,0,
-        //    this.background.spatiality.w,
-        //    this.background.spatiality.h,
-        //    'img/carina-nebulae-ref.png');
-        //this.background.set_scroll_speed(0,0.01);
-        //this.background.set_if_loopable(false);
-        
 
         // TODO add a filereader that inputs xml files for level loading
         //      including enemy placement and landmarks
@@ -1005,21 +918,19 @@ var Core = {
 
 
     update: function(elapsed_time) {
-        //this.background.update(elapsed_time);
         this.world.update(elapsed_time);
-        this.enemy.update(elapsed_time);
+        //this.enemy.update(elapsed_time);
         this.player.update(elapsed_time);
     },
 
 
     draw: function() {
         this.clear();
-        //this.background.draw(this.context,this.canvas);
         this.world.draw(this.context);
-        this.enemy.draw(this.context);
+        //this.enemy.draw(this.context);
         this.player.draw(this.context);
-        this.player.draw_collision(this.context,'#ffffff');
-        this.enemy.draw_collision(this.context,'#ff00ff');
+        this.player.draw_collision(this.context);
+        //this.enemy.draw_collision(this.context,'#ff00ff');
     },
 
 
@@ -1033,13 +944,8 @@ var Core = {
 
 
 
-
 function run() {
-
-    //Core.init();
-
-    testing();
-
+    Core.init();
 }
 
 
