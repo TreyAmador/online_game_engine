@@ -181,6 +181,24 @@ Vec2D.prototype.degrees = function() {
 }
 
 
+
+function Rectangle(x,y,w,h) {
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+}
+
+
+
+function Circle(x,y,r) {
+    this.x = x;
+    this.y = y;
+    this.r = r;
+}
+
+
+
 // TODO add more physics!
 var Physics = {
 
@@ -243,16 +261,17 @@ var Calculator = {
     },
 
 
+    area: function(circle) {
+        return Math.PI * cirle.r * circle.r;
+    },
+
+
+    circumference: function(circle) {
+        return Math.PI * 2 * circle.r;
+    },
+
+
 };
-
-
-
-function Rectangle(x,y,w,h) {
-    this.x = x;
-    this.y = y;
-    this.w = w;
-    this.h = h;
-}
 
 
 
@@ -316,7 +335,6 @@ Sprite.prototype.draw = function(context,x,y) {
         this.height_scale*this.body.h);
 
 }
-
 
 
 function Background(x,y) {
@@ -660,15 +678,94 @@ var ASTEROID_STATE = Object.freeze({
 
 // TODO write asteroid class with various sprites
 //      and various 'skeleton configs'
+//      create a frame class which holds both sprite and skeleton
 //      then refactor to understand new body and circle class
+
+
+
+function Anatomy() {
+    this.sprites = [];
+    this.collision = [];
+}
+
+
+// TODO pass array of sprite coords and collision coords
+//      the sprite is always rect-like, offset of spritesheet
+//      the collision shape is part of inheritance hierarchy
+//          calls some sort of init function which returns to collision array
+Anatomy.prototype.add_frame = function(filepath,state,sprites,collisions) {
+    var len = sprites.length;
+    for (var i = 0; i < len; ++i) {
+        var sprite = sprites[i];
+        this.add_sprite(filepath,state,
+            sprite.x,sprite.y,sprite.w,sprite.h);
+        var collision = collisions[i];
+        this.add_collision(state,
+            collision.x,collision.y,collision.r);
+    }
+}
+
+
+Anatomy.prototype.add_sprite = function(filepath,state,x,y,w,h) {
+    var sprite = new Sprite(x,y,w,h);
+    sprite.init(filepath,MediaManager);
+    this.sprites.push(sprite);
+}
+
+
+// pass the collision itself
+Anatomy.prototype.add_collision = function(state,x,y,r) {
+    var circle = new Circle(x,y,r);
+    this.collision.push(circle);
+}
+
+
+Anatomy.prototype.draw = funciton(context) {
+
+}
+
 
 function Asteroid(x,y) {
 
+    // sprites should be object of arrays
     this.sprites = {};
-    this.init_vectors(x,y);
-    this.set_state(ASTEROID_STATE.ROLL);
+
+    // the frames should be cirlces
+    //this.frames = [];
+
+    this.frames = {};
+
+    this.pos = new Pos2D(x,y);
+    this.vec = new Vec2D(0,0);
+    this.accel = new Vec2D(0,0);
+    this.state = ASTEROID_STATE.ROLL;
+
+}
 
 
+Asteroid.prototype.add_frame = function(filepath,state,x,y,r) {
+
+}
+
+
+Asteroid.prototype.add_sprite = function(filepath,state,x,y,w,h) {
+    
+}
+
+
+// this would be in the circle class, not body
+Asteroid.prototype.add_collision = function(x,y,r) {
+
+}
+
+
+Asteroid.prototype.update = function(elapsed_time) {
+    // TODO will update position and velocity and acceleration
+}
+
+
+Asteroid.prototype.draw = function(context) {
+    
 }
 
 
