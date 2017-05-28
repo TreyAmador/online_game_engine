@@ -441,15 +441,24 @@ function StarRand(x,y) {
 
 
 
-function Stars(count) {
+// TODO add a file reader
+//      xml files will be loaded to position enemies
+//      enemies descend the screen
+//      updated offscreen with velocity * elapsed time
+//      but only drawn once they enter the screen
+//
+// TODO add item to introduce sprite for background planets
+//      which will be read by filereader
+//      then will have velocity
+//      a celestial body, if you will
+function World(count) {
     this.init_stars(count);
     this.size = 1;
     this.color = '#e6e6fa';
 }
 
 
-
-Stars.prototype.init_stars = function(count) {
+World.prototype.init_stars = function(count) {
     this.stars = [];
     for (var i = 0; i < count; ++i) {
         this.stars.push(new StarRand(
@@ -458,7 +467,21 @@ Stars.prototype.init_stars = function(count) {
 }
 
 
-Stars.prototype.update = function(elapsed_time) {
+
+// TODO init map here
+//      pass in this.enemies from core
+//      and add new enemies
+//      have filereader in World func
+//      pass out file that was read
+//      and add here, with pos and vel
+World.prototype.init_enemy_layout = function(enemies,layout) {
+
+
+
+}
+
+
+World.prototype.update = function(elapsed_time) {
     var len = this.stars.length;
     for (var i = 0; i < len; ++i) {
         this.stars[i].pos.y += this.stars[i].vel.y * elapsed_time;
@@ -470,8 +493,9 @@ Stars.prototype.update = function(elapsed_time) {
 }
 
 
-Stars.prototype.draw = function(context) {
-    
+
+// TODO update this to draw sprite, not circles ?
+World.prototype.draw = function(context) {
     var len = this.stars.length;
     for (var i = 0; i < len; ++i) {
         context.beginPath();
@@ -480,8 +504,8 @@ Stars.prototype.draw = function(context) {
         context.fillStyle = this.color;
         context.fill();
     }
-
 }
+
 
 
 
@@ -628,6 +652,28 @@ var Body = {
 
 
 
+var ASTEROID_STATE = Object.freeze({
+    ROLL: 0
+});
+
+
+
+// TODO write asteroid class with various sprites
+//      and various 'skeleton configs'
+//      then refactor to understand new body and circle class
+
+function Asteroid(x,y) {
+
+    this.sprites = {};
+    this.init_vectors(x,y);
+    this.set_state(ASTEROID_STATE.ROLL);
+
+
+}
+
+
+
+
 var RectBody = {
 
 
@@ -707,6 +753,11 @@ var MultiRectBody = {
 
 
 };
+
+
+// TODO create circle class that will embody asteroids
+//      and can be shot and bounce off from laser
+
 
 
 
@@ -791,6 +842,8 @@ Player.prototype.draw = function(context) {
 
 
 
+// TODO current enemy should inherit single rect
+
 function Enemy(x,y) {
     
     this.sprites = {};
@@ -810,6 +863,15 @@ Enemy.prototype.update = function(elapsed_time) {
 
 Enemy.prototype.draw = function(context) {
     this.sprites[this.state].draw(context,this.pos.x,this.pos.y);    
+}
+
+
+
+
+function Enemies(layout) {
+
+    this.enemies = [];
+
 }
 
 
@@ -834,6 +896,8 @@ var Core = {
         this.input = new Input();
 
 
+        this.world = new World(STAR_COUNT);
+        
         this.player = new Player(300,500);
         this.player.set_state(PLAYER_STATE.FLY);
         this.player.add_sprite('img/ship3 (3).png',
@@ -852,8 +916,7 @@ var Core = {
         this.enemy.add_collision(24,10,40,90);
         
 
-        this.stars = new Stars(STAR_COUNT);
-        var stars = new Stars(STAR_COUNT);
+        //var world = new World(STAR_COUNT);
 
 
         //this.background = new Background(-1200,this.canvas.height-5120);
@@ -865,16 +928,6 @@ var Core = {
         //this.background.set_scroll_speed(0,0.01);
         //this.background.set_if_loopable(false);
         
-
-        //this.background = new Background(0,-600);
-        //this.background.set_spatiality(0,0,800,1200);
-        //this.background.add_sprite(0,0,
-        //    this.background.spatiality.w,
-        //    this.background.spatiality.h,
-        //    'img/level1Background.png');
-        //this.background.set_scroll_speed(0,0.01);
-        //this.background.set_loopable(true);
-
 
         // TODO add a filereader that inputs xml files for level loading
         //      including enemy placement and landmarks
@@ -935,24 +988,25 @@ var Core = {
             this.player.release_trigger();
         }
 
+        this.input.begin_new_frame();
+
     },
 
 
     update: function(elapsed_time) {
-        this.player.update(elapsed_time);
         //this.background.update(elapsed_time);
+        this.world.update(elapsed_time);
         this.enemy.update(elapsed_time);
-        this.stars.update(elapsed_time);
-        this.input.begin_new_frame();
+        this.player.update(elapsed_time);
     },
 
 
     draw: function() {
         this.clear();
         //this.background.draw(this.context,this.canvas);
-        this.stars.draw(this.context);
-        this.player.draw(this.context);
+        this.world.draw(this.context);
         this.enemy.draw(this.context);
+        this.player.draw(this.context);
         this.player.draw_collision(this.context,'#ffffff');
         this.enemy.draw_collision(this.context,'#ff00ff');
     },
@@ -960,7 +1014,7 @@ var Core = {
 
     clear: function() {
         this.context.clearRect(0,0,
-        this.canvas.width,this.canvas.height);
+            this.canvas.width,this.canvas.height);
     },
 
 
