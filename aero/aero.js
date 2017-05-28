@@ -686,6 +686,7 @@ var ASTEROID_STATE = Object.freeze({
 function Anatomy() {
     this.sprites = [];
     this.collision = [];
+    this.index_no = 0;
 }
 
 
@@ -701,7 +702,7 @@ Anatomy.prototype.add_frame = function(filepath,state,sprites,collisions) {
             sprite.x,sprite.y,sprite.w,sprite.h);
         var collision = collisions[i];
         this.add_collision(state,
-            collision.x,collision.y,collision.r);
+            collision.x,collision.y,collision.w,collision.h);
     }
 }
 
@@ -714,13 +715,27 @@ Anatomy.prototype.add_sprite = function(filepath,state,x,y,w,h) {
 
 
 // pass the collision itself
-Anatomy.prototype.add_collision = function(state,x,y,r) {
-    var circle = new Circle(x,y,r);
-    this.collision.push(circle);
+Anatomy.prototype.add_collision = function(state,x,y,w,h) {
+    var rect = new Rectangle(x,y,w,h);
+    this.collision.push(rect);
 }
 
 
-Anatomy.prototype.draw = funciton(context) {
+Anatomy.prototype.update = function(elapsed_time) {
+    this.index_no = this.index_no++ % this.sprites.length;
+}
+
+
+Anatomy.prototype.draw = function(context,x,y) {
+
+    var sprite = this.sprites[this.index_no];
+    sprite.draw(context,x,y);
+
+    var coll = this.collision[this.index_no];
+    context.strokeStyle = '#ffffff';
+    context.strokeRect(
+        coll.x, coll.y,
+        coll.w, coll.h);
 
 }
 
@@ -765,7 +780,7 @@ Asteroid.prototype.update = function(elapsed_time) {
 
 
 Asteroid.prototype.draw = function(context) {
-    
+
 }
 
 
@@ -1119,8 +1134,43 @@ var Core = {
 
 
 
+function testing() {
+
+
+    this.canvas = document.createElement('canvas');
+    this.canvas.width = CANVAS_WIDTH;
+    this.canvas.height = CANVAS_HEIGHT;
+    this.context = this.canvas.getContext('2d');
+    
+    var game_port = document.getElementById('game-port');
+    game_port.textContent = '';
+    game_port.appendChild(this.canvas);
+
+
+    var anatomy = new Anatomy();
+    var sprite = new Rectangle(0,0,104,81);
+    var collision = new Rectangle(20,16,64,58);
+
+    anatomy.add_frame('img/ship3 (3).png',
+            PLAYER_STATE.FLY,[sprite],[collision]);
+
+    setInterval(function(){
+        anatomy.update(0);
+        anatomy.draw(context,0,0);
+    });
+
+
+}
+
+
+
+
 function run() {
-    Core.init();
+
+    //Core.init();
+
+    testing();
+
 }
 
 
