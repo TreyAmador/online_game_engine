@@ -26,7 +26,7 @@ AnimatedSprite.prototype.single_frame_rect = function(frame) {
 
 AnimatedSprite.prototype.clear = function() {
     this.frames = [];
-    //this.frame_no = 0;
+    this.frame_no = 0;
 }
 
 
@@ -57,7 +57,6 @@ Anatomy.prototype.init = function(filepath,manager) {
 }
 
 
-
 // TODO check index of collisions to ensure it not out of index
 Anatomy.prototype.add_frames_rect = function(frames,collisions) {
     var len = frames.length;
@@ -67,6 +66,24 @@ Anatomy.prototype.add_frames_rect = function(frames,collisions) {
     }
 }
 
+
+Anatomy.prototype.rectify_collision = function(collisions,pos) {
+    var len = collisions.length;
+    for (var i = 0; i < len; ++i) {
+        collisions[i].x += pos.x;
+        collisions[i].y += pos.y;
+    }
+}
+
+
+
+// REMEMBER! collision rects are offsets from sprite
+// this will also be the case with physics calculations
+// TODO make collision rects absolute in world space (?)
+Anatomy.prototype.detect_collisions = function(pos) {
+    var clsn_rect = this.collisions[this.frame_no];
+    console.log(clsn_rect.x+pos.x,clsn_rect.y+pos.y);
+}
 
 
 // TODO reviese this to be less error prone
@@ -82,117 +99,73 @@ Anatomy.prototype.draw = function(context,x,y) {
 }
 
 
-Anatomy.prototype.draw_collision = function(context) {
+Anatomy.prototype.draw_collision = function(context,pos) {
     var col = this.collisions[this.frame_no];
     context.strokeStyle = '#ffffff';
-    context.strokeRect(col.x,col.y,col.w,col.h);
+    context.strokeRect(col.x+pos.x,col.y+pos.y,col.w,col.h);
 }
 
 
 
-/*
 
-function Anatomy() {
-    this.sprites = [];
-    this.collision = [];
-    this.index_no = 0;
+
+var ASTR = Object.freeze({
+    FLY: 0,
+});
+
+
+
+function Pos2D(x,y) {
+    this.x = x;
+    this.y = y;
 }
-
-
-// TODO pass array of sprite coords and collision coords
-//      the sprite is always rect-like, offset of spritesheet
-//      the collision shape is part of inheritance hierarchy
-//          calls some sort of init function which returns to collision array
-Anatomy.prototype.add_frame = function(filepath,state,sprites,collisions) {
-    var len = sprites.length;
-    for (var i = 0; i < len; ++i) {
-        var sprite = sprites[i];
-        this.add_sprite(filepath,
-            sprite.x,sprite.y,sprite.w,sprite.h);
-        var collision = collisions[i];
-        this.add_collision(state,
-            collision.x,collision.y,collision.w,collision.h);
-    }
-}
-
-
-Anatomy.prototype.add_sprite = function(filepath,x,y,w,h) {
-    var sprite = new Sprite(x,y,w,h);
-    sprite.init(filepath,MediaManager);
-    this.sprites.push(sprite);
-}
-
-
-// pass the collision itself
-Anatomy.prototype.add_collision = function(state,x,y,w,h) {
-    var rect = new Rectangle(x,y,w,h);
-    this.collision.push(rect);
-}
-
-
-Anatomy.prototype.update = function(elapsed_time) {
-    this.index_no = ++this.index_no % this.sprites.length;
-}
-
-
-Anatomy.prototype.draw = function(context,x,y) {
-
-    var sprite = this.sprites[this.index_no];
-    sprite.draw(context,x,y);
-
-    var coll = this.collision[this.index_no];
-    context.strokeStyle = '#ffffff';
-    context.strokeRect(
-        coll.x, coll.y,
-        coll.w, coll.h);
-
-}
-
-*/
 
 
 
 function Asteroid(x,y) {
 
-    // sprites should be object of arrays
-    this.sprites = {};
-
-    // the frames should be cirlces
-    //this.frames = [];
-
-    this.frames = {};
-
+    this.anatomy = {};
+    this.state = ASTR.FLY;
     this.pos = new Pos2D(x,y);
-    this.vec = new Vec2D(0,0);
-    this.accel = new Vec2D(0,0);
-    this.state = ASTEROID_STATE.ROLL;
 
 }
 
 
-Asteroid.prototype.add_frame = function(filepath,state,x,y,r) {
+Asteroid.prototype.set_pos = function(x,y) {
+    this.pos.x = x;
+    this.pos.y = y;
+}
+
+
+Asteroid.prototype.add_frame = function(filepath,state,sprites,collisions) {
+
+    var anatomy = new Anatomy();
+    anatomy.init(filepath,MediaManager);
+    anatomy.add_frames_rect(sprites,collisions);
+    this.anatomy[state] = anatomy;
 
 }
 
 
-Asteroid.prototype.add_sprite = function(filepath,state,x,y,w,h) {
-    
-}
-
-
-// this would be in the circle class, not body
-Asteroid.prototype.add_collision = function(x,y,r) {
+Asteroid.prototype.move = function(delta) {
 
 }
 
 
 Asteroid.prototype.update = function(elapsed_time) {
     // TODO will update position and velocity and acceleration
+    //this.pos.y += 1;
+    this.anatomy[this.state].update(elapsed_time);
 }
 
 
 Asteroid.prototype.draw = function(context) {
+    this.anatomy[this.state].draw(context,this.pos.x,this.pos.y);
+}
 
+
+Asteroid.prototype.draw_collision = function(context) {
+    this.anatomy[this.state].draw_collision(context,this.pos);
 }
 
 
@@ -222,70 +195,22 @@ function testing() {
         }
     }
 
-    var anatomy = new Anatomy();
-    anatomy.init('img/asteroid_01.png',MediaManager);
-    anatomy.add_frames_rect(sprites,collisions);
 
-
-
-
-    //var animated = new AnimatedSprite();
-    //animated.init('img/asteroid_01.png',MediaManager);
-
-    //var rects = [];
-    //for (var r = 0; r < 4; ++r) {
-    //    for (var c = 0; c < 8; ++c) {
-    //        rects.push(new Rectangle(c*w,r*h,w,h));
-    //    }
-    //}
-    //animated.init_frames_rects(rects);
-
-
-    /*
-
-    var anatomy = new Anatomy();
-    var sprite = new Rectangle(0,0,104,81);
-
-    var sprites = [];
-    var colls = [];
-    var w = 128;
-    var h = 128;
-    for (var r = 4; r < 8; ++r) {
-        for (var c = 0; c < 8; ++c) {
-            sprites.push(new Rectangle(c*w,r*h,w,h));
-            colls.push(new Rectangle(14,14,100,100));
-        }
-    }
-
-    var collision = new Rectangle(20,16,64,58);
-
-    anatomy.add_frame('img/asteroid_01.png',
-            ASTEROID_STATE.ROLL,sprites,colls);
-
-    */
+    var asteroids = new Asteroid(100,100);
+    asteroids.add_frame('img/asteroid_01.png',ASTR.FLY,sprites,collisions);
 
 
     var self = this;
     setInterval(function(){
         self.context.clearRect(0,0,
             self.canvas.width,self.canvas.height);
-        anatomy.update(0);
-        anatomy.draw(self.context,0,0);
-        anatomy.draw_collision(self.context);
-        
+        asteroids.update(0);
+        asteroids.draw(self.context,0,0);
+        asteroids.draw_collision(self.context);
     },1000/30);
 
 
 }
-
-
-
-
-
-
-
-
-
 
 
 
