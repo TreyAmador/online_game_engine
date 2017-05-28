@@ -256,8 +256,6 @@ var Calculator = {
 
 
     rand_range: function(min,max) {
-        //min = Math.ceil(min);
-        //max = Math.floor(max);
         return Math.floor(Math.random()*(max-min)) + min;
     },
 
@@ -276,70 +274,39 @@ var Calculator = {
 
 
 
-/*
 
-// TODO add offset to sprite itself
-function Sprite(x,y,w,h) {
-    this.body = new Rectangle(x,y,w,h);
-    this.height_scale = 1;
-    this.width_scale = 1;
+function BodyMultiRect() {
+    this.collisions = [];
 }
 
 
-Sprite.prototype.init = function(filepath,manager) {
-    this.img = manager.load(filepath);
+BodyMultiRect.prototype.add_collision = function(collision) {
+    var len = collision.length;
+    for (var i = 0; i < len; ++i) {
+        this.collisions.push(collision[i]);
+    }
 }
 
 
-Sprite.prototype.shrink_width = function(factor) {
-    this.size_width = 1 / factor;
-}
-
-
-Sprite.prototype.shrink_height = function(factor) {
-    this.size_height = 1 / factor;
-}
-
-
-Sprite.prototype.shrink = function(factor) {
-    this.size_width = this.size_height = 1 / factor;
-}
-
-
-Sprite.prototype.enlarge_width = function(factor) {
-    this.size_width = factor;
-}
-
-
-Sprite.prototype.enlarge_height = function(factor) {
-    this.size_height = factor;
-}
-
-
-Sprite.prototype.enlarge = function(factor) {
-    this.size_width = this.size_height = factor;
-}
-
-
-// update should probably go with player?
-// there will be some sprite update stuff
-Sprite.prototype.update = function(elapsed_time) {
+BodyMultiRect.prototype.detect_collision = function(x,y) {
 
 }
 
 
-// pass different functions for src and dest dimensions
-Sprite.prototype.draw = function(context,x,y) {
-
-    context.drawImage(this.img,
-        this.body.x,this.body.y,
-        this.body.w,this.body.h,x,y,
-        this.width_scale*this.body.w,
-        this.height_scale*this.body.h);
+BodyMultiRect.prototype.update = function(elapsed_time) {
 
 }
 
-*/
+
+BodyMultiRect.prototype.draw_collision = function(context,x,y) {
+    var len = this.collisions.length;
+    for (var i = 0; i < len; ++i) {
+        var col = this.collisions[i];
+        context.strokeStyle = '#ffffff';
+        context.strokeRect(col.x+x,col.y+y,col.w,col.h);
+    }
+}
+
 
 
 // TODO add a timer to entire entity
@@ -370,7 +337,7 @@ Sprite.prototype.clear = function() {
 
 // this must be updated to be more versatile
 Sprite.prototype.update = function(elapsed_time) {
-    //this.frame_no = ++this.frame_no % this.frames.length;
+    // this.frame_no = ++this.frame_no % this.frames.length;
 }
 
 
@@ -380,7 +347,6 @@ Sprite.prototype.draw = function(context,frame_no,x,y) {
         rect.x,rect.y,rect.w,rect.h,
         x,y,rect.w,rect.h);
 }
-
 
 
 
@@ -403,6 +369,7 @@ function StarRand(x,y) {
 //      which will be read by filereader
 //      then will have velocity
 //      a celestial body, if you will
+
 function World(count) {
     this.init_stars(count);
     this.size = 1;
@@ -557,17 +524,14 @@ function InheritFrom(Super,Sub) {
 }
 
 
-
-
 // TODO create circle class that will embody asteroids
 //      and can be shot and bounce off from laser
 
 
 
-
-function Anatomy() {
+function Anatomy(Body) {
     this.sprites = new Sprite();
-    this.collisions = [];
+    this.collisions = new Body();
     this.frame_no = 0;
 }
 
@@ -582,24 +546,25 @@ Anatomy.prototype.add_frames_rect = function(frames,collisions) {
     var len = frames.length;
     for (var i = 0; i < len; ++i) {
         this.sprites.single_frame_rect(frames[i]);
-        this.collisions.push(collisions[i]);
+        this.collisions.add_collision(collisions[i]);
     }
 }
 
 
 // probably not necessary now
-Anatomy.prototype.rectify_collision = function(collisions,pos) {
-    var len = collisions.length;
-    for (var i = 0; i < len; ++i) {
-        collisions[i].x += pos.x;
-        collisions[i].y += pos.y;
-    }
-}
+//Anatomy.prototype.rectify_collision = function(collisions,pos) {
+//    var len = collisions.length;
+//    for (var i = 0; i < len; ++i) {
+//        collisions[i].x += pos.x;
+//        collisions[i].y += pos.y;
+//    }
+//}
 
 
 Anatomy.prototype.move_body = function(pos) {
 
 }
+
 
 // REMEMBER! collision rects are offsets from sprite
 // this will also be the case with physics calculations
@@ -610,6 +575,7 @@ Anatomy.prototype.detect_collisions = function(pos) {
 }
 
 
+// will this actually work now?
 Anatomy.prototype.get_collision_frame = function(pos) {
     var rect = this.collisions[this.frame_no];
     var clsn = new Rectangle(
@@ -633,27 +599,17 @@ Anatomy.prototype.draw = function(context,x,y) {
 
 
 Anatomy.prototype.draw_collision = function(context,x,y) {
-
-    var col = this.collisions[this.frame_no];
-    context.strokeStyle = '#ffffff';
-    context.strokeRect(col.x+x,col.y+y,col.w,col.h);
-    
+    this.collisions.draw_collision(context,x,y);
 }
-
-
 
 
 
 
 function Player(x,y) {
 
-    //this.sprites = {};
-    //this.collisions = [];
     this.anatomy = {};
     this.state = PLAYER_STATE.FLY;
     this.init_vectors(x,y);
-
-    //console.log(this.pos,this.vel,this.accel);
     
     this.invincible = false;
     this.in_motion = false;
@@ -666,12 +622,13 @@ Player.prototype.init_vectors = function(x,y) {
     this.pos = new Pos2D(x,y);
     this.vel = new Vec2D(0,0);
     this.accel = new Vec2D(0,0);
-    //console.log(this.pos,this.vec,this.accel);
 }
 
 
-Player.prototype.add_frame = function(filepath,state,sprites,collisions) {
-    var anatomy = new Anatomy();
+// TODO pass in collision shape here
+//      init it when adding frames
+Player.prototype.add_frame = function(Body,filepath,state,sprites,collisions) {
+    var anatomy = new Anatomy(Body);
     anatomy.init(filepath,MediaManager);
     anatomy.add_frames_rect(sprites,collisions);
     this.anatomy[state] = anatomy;
@@ -690,7 +647,6 @@ Player.prototype.set_pos = function(x,y) {
 
 
 Player.prototype.move_body = function(delta) {
-    //this.anatomy[this.state].move_body(delta);
     this.pos.x += delta.x;
     this.pos.y += delta.y;
 }
@@ -795,7 +751,6 @@ Enemy.prototype.draw = function(context) {
 
 
 
-
 function Enemies(layout) {
 
     this.enemies = [];
@@ -823,14 +778,33 @@ var Core = {
 
         this.input = new Input();
 
-
         this.world = new World(STAR_COUNT);
+
+
+        var sprite = [new Rectangle(0,0,104,81)];
+        var collisions = [
+            [
+                new Rectangle(20,16,10,58),
+                new Rectangle(74,16,10,58),
+                new Rectangle(30,26,44,16),
+                new Rectangle(42,10,20,16)
+            ]
+        ];
         
+
         this.player = new Player(300,500);
         this.player.set_state(PLAYER_STATE.FLY);
-        this.player.add_frame('img/ship3 (3).png',PLAYER_STATE.FLY,
-            [new Rectangle(0,0,104,81)],[new Rectangle(20,16,64,58)]);
+        this.player.add_frame(BodyMultiRect,
+            'img/ship3 (3).png',PLAYER_STATE.FLY,
+            sprite,collisions);
         this.player.cannon.set_exit_point(104,81);
+
+
+        //this.player = new Player(300,500);
+        //this.player.set_state(PLAYER_STATE.FLY);
+        //this.player.add_frame('img/ship3 (3).png',PLAYER_STATE.FLY,
+        //    [new Rectangle(0,0,104,81)],[new Rectangle(20,16,64,58)]);
+        //this.player.cannon.set_exit_point(104,81);
 
 
         //this.player.add_sprite('img/ship3 (3).png',
@@ -850,7 +824,6 @@ var Core = {
         
 
         //var world = new World(STAR_COUNT);
-
 
 
         // TODO add a filereader that inputs xml files for level loading
