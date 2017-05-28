@@ -29,16 +29,17 @@ var TIME_INTERVAL = MSEC_PER_SEC / FRAMES_PER_SEC;
 var CANVAS_WIDTH = 800;
 var CANVAS_HEIGHT = 600;
 
-var ACCEL_START = 0.0006;
+var ACCEL_START = 0.005;
 var ACCEL_STOP = 0.0;
-var MAX_VEL_MAG = 0.2;
-var FRICTION = 0.90;
+var MAX_VEL_MAG = 0.5;
+var FRICTION = 0.95;
 
 var STAR_COUNT = 25;
+var MAX_STAR_VEL = 0.3;
 
 var LASER_WIDTH = 2;
-var LASER_HEIGHT = 10;
-var LASER_VELOCITY = 0.3;
+var LASER_HEIGHT = 10; 
+var LASER_VELOCITY = 0.7;
 
 
 var KEY = Object({
@@ -454,7 +455,7 @@ Background.prototype.draw = function(context,canvas) {
 function StarRand(x,y) {
     this.pos = new Pos2D(
         Calculator.rand_range(0,CANVAS_WIDTH), y);
-    this.vel = new Vec2D(0, Math.random() % 0.1 + 0.001);
+    this.vel = new Vec2D(0, Math.random() % MAX_STAR_VEL);
 }
 
 
@@ -698,7 +699,7 @@ Anatomy.prototype.add_frame = function(filepath,state,sprites,collisions) {
     var len = sprites.length;
     for (var i = 0; i < len; ++i) {
         var sprite = sprites[i];
-        this.add_sprite(filepath,state,
+        this.add_sprite(filepath,
             sprite.x,sprite.y,sprite.w,sprite.h);
         var collision = collisions[i];
         this.add_collision(state,
@@ -707,7 +708,7 @@ Anatomy.prototype.add_frame = function(filepath,state,sprites,collisions) {
 }
 
 
-Anatomy.prototype.add_sprite = function(filepath,state,x,y,w,h) {
+Anatomy.prototype.add_sprite = function(filepath,x,y,w,h) {
     var sprite = new Sprite(x,y,w,h);
     sprite.init(filepath,MediaManager);
     this.sprites.push(sprite);
@@ -722,7 +723,7 @@ Anatomy.prototype.add_collision = function(state,x,y,w,h) {
 
 
 Anatomy.prototype.update = function(elapsed_time) {
-    this.index_no = this.index_no++ % this.sprites.length;
+    this.index_no = ++this.index_no % this.sprites.length;
 }
 
 
@@ -961,7 +962,7 @@ function Enemy(x,y) {
     this.sprites = {};
     this.collisions = [];
     this.state = PLAYER_STATE.FLY;
-    this.def_velocity = 0.01;
+    this.def_velocity = 0.1;
     this.init_vectors(x,y);
     
 }
@@ -1050,7 +1051,7 @@ var Core = {
             self.handle_input();
             self.update(TIME_INTERVAL);
             self.draw();
-        });
+        },TIME_INTERVAL);
 
     },
 
@@ -1134,6 +1135,18 @@ var Core = {
 
 
 
+
+function run() {
+
+    Core.init();
+
+    //testing();
+
+}
+
+
+
+
 function testing() {
 
 
@@ -1149,27 +1162,32 @@ function testing() {
 
     var anatomy = new Anatomy();
     var sprite = new Rectangle(0,0,104,81);
+
+    var sprites = [];
+    var colls = [];
+    var w = 128;
+    var h = 128;
+    for (var r = 4; r < 8; ++r) {
+        for (var c = 0; c < 8; ++c) {
+            sprites.push(new Rectangle(c*w,r*h,w,h));
+            colls.push(new Rectangle(14,14,100,100));
+        }
+    }
+
     var collision = new Rectangle(20,16,64,58);
 
-    anatomy.add_frame('img/ship3 (3).png',
-            PLAYER_STATE.FLY,[sprite],[collision]);
+    anatomy.add_frame('img/asteroid_01.png',
+            ASTEROID_STATE.ROLL,sprites,colls);
 
+    var self = this;
     setInterval(function(){
+        self.context.clearRect(0,0,
+            self.canvas.width,self.canvas.height);
         anatomy.update(0);
         anatomy.draw(context,0,0);
-    });
+        
+    },50);
 
-
-}
-
-
-
-
-function run() {
-
-    //Core.init();
-
-    testing();
 
 }
 
