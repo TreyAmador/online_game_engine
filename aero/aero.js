@@ -538,8 +538,7 @@ Cannon.prototype.fire = function(x,y) {
     if (this.released) {
         this.lasers.push(new Laser(
             this.x_offset+x,y,
-            this.w,this.h,
-            this.vel));
+            this.w,this.h,this.vel));
         this.released = false;
     }
 }
@@ -670,13 +669,11 @@ var RectBody = {
 var MultiRectBody = {
 
 
-    collisions:[],
-
-
     add_collision: function(x,y,w,h) {
         
         this.collisions.push(new Rectangle(
             this.pos.x+x,this.pos.y+y,w,h));
+        
     },
 
 
@@ -714,13 +711,14 @@ var MultiRectBody = {
 
 
 function Player(x,y) {
-    //this.inherit_from(BaseBody);
-    //inherit_from(BaseBody,this);
+
     this.init_vectors(x,y);
     this.sprites = {};
+    this.collisions = [];
     this.invincible = false;
     this.in_motion = false;
     this.cannon = new Cannon();
+
 }
 
 
@@ -764,6 +762,12 @@ Player.prototype.release_trigger = function() {
 }
 
 
+Player.prototype.set_laser_dimension = function(w,h) {
+    this.cannon.w = w;
+    this.cannon.h = h;
+}
+
+
 Player.prototype.update = function(elapsed_time) {
 
     this.vel = Physics.velocity_delta_2d(this.accel,this.vel,elapsed_time);
@@ -790,14 +794,17 @@ Player.prototype.draw = function(context) {
 function Enemy(x,y) {
     
     this.sprites = {};
+    this.collisions = [];
     this.state = PLAYER_STATE.FLY;
+    this.def_velocity = 0.01;
     this.init_vectors(x,y);
     
 }
 
 
 Enemy.prototype.update = function(elapsed_time) {
-    this.pos.y += elapsed_time * 0.01;
+    var delta = new Pos2D(0,this.def_velocity * elapsed_time);
+    this.move_body(delta);
 }
 
 
@@ -822,36 +829,27 @@ var Core = {
         game_port.appendChild(this.canvas);
 
 
-        this.input = new Input();
-
         this.init_inheritance();
 
+        this.input = new Input();
 
-        //this.player = new Player(RectBody);
-        //this.player.set_state(PLAYER_STATE.FLY);
-        //this.player.add_sprite('img/ship3 (3).png',
-        //    PLAYER_STATE.FLY,0,0,104,81);
-        //this.player.init_pos(300,200);
-        //this.player.init_collision(20,10,64,61);
-        
 
         this.player = new Player(300,500);
         this.player.set_state(PLAYER_STATE.FLY);
         this.player.add_sprite('img/ship3 (3).png',
             PLAYER_STATE.FLY,0,0,104,81);
-        //this.player.init_pos(300,500);
         this.player.add_collision(20,16,10,58);
         this.player.add_collision(74,16,10,58);
         this.player.add_collision(30,26,44,16);
         this.player.add_collision(42,10,20,16);
-
         this.player.cannon.set_exit_point(104,81);
 
 
         this.enemy = new Enemy(400,-100);
-        this.enemy.add_sprite(
-            'img/kit2ship2flipped.png',
+        this.enemy.set_state(PLAYER_STATE.FLY);
+        this.enemy.add_sprite('img/kit2ship2flipped.png',
             PLAYER_STATE.FLY,0,0,88,110);
+        this.enemy.add_collision(24,10,40,90);
         
 
         this.stars = new Stars(STAR_COUNT);
@@ -954,10 +952,9 @@ var Core = {
         //this.background.draw(this.context,this.canvas);
         this.stars.draw(this.context);
         this.player.draw(this.context);
-        //this.player.draw_collision(this.context,'#ffffff');
-
         this.enemy.draw(this.context);
-
+        this.player.draw_collision(this.context,'#ffffff');
+        this.enemy.draw_collision(this.context,'#ff00ff');
     },
 
 
