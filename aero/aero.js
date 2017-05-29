@@ -271,6 +271,7 @@ var Calculator = {
 
 function BodyRect() {
     this.collisions = [];
+    this.frame_no = 0;
 }
 
 
@@ -284,19 +285,24 @@ BodyRect.prototype.detect_collision = function(x,y) {
 }
 
 
+BodyRect.prototype.set_frame_no = function(frame_no) {
+    this.frame_no = frame_no;
+}
+
+
 BodyRect.prototype.size = function() {
     return this.collisions.length;
 }
 
 
 BodyRect.prototype.update = function(elapsed_time) {
-
+    this.frame_no = ++this.frame_no % this.collisions.length;
 }
 
 
-BodyRect.prototype.draw_collision = function(context,frame_no,x,y) {
+BodyRect.prototype.draw_collision = function(context,x,y) {
     context.strokeStyle = '#ffffff';
-    var rect = this.collisions[frame_no];
+    var rect = this.collisions[this.frame_no];
     context.strokeRect(
         rect.x+x,rect.y+y,
         rect.w,rect.h);
@@ -306,6 +312,7 @@ BodyRect.prototype.draw_collision = function(context,frame_no,x,y) {
 
 function BodyCirc(x,y) {
     this.collision = [];
+    this.frame_no = 0;
 }
 
 
@@ -322,6 +329,11 @@ BodyCirc.prototype.detect_collision = function() {
 }
 
 
+BodyCirc.prototype.set_frame_no = function(frame_no) {
+    this.frame_no = frame_no;
+}
+
+
 BodyCirc.prototype.size = function() {
     return this.collision.length;
 }
@@ -330,12 +342,12 @@ BodyCirc.prototype.size = function() {
 // TODO perhaps make frame counter a member variable
 //      and update frame counter here
 BodyCirc.prototype.update = function(elapsed_time) {
-
+    this.frame_no = ++this.frame_no % this.collision.length;
 }
 
 
-BodyCirc.prototype.draw_collision = function(context,frame_no,x,y) {
-    var rect = this.collision[frame_no];
+BodyCirc.prototype.draw_collision = function(context,x,y) {
+    var rect = this.collision[this.frame_no];
     context.strokeStyle = '#ffffff';
     context.beginPath();
     context.arc(
@@ -348,6 +360,7 @@ BodyCirc.prototype.draw_collision = function(context,frame_no,x,y) {
 
 function BodyMultiRect() {
     this.collision = [];
+    this.frame_no = 0;
 }
 
 
@@ -358,7 +371,6 @@ BodyMultiRect.prototype.add_collision = function(collision) {
         clsn.push(collision[i]);
     }
     this.collision.push(clsn);
-    console.log(collision.length);
 }
 
 
@@ -372,16 +384,21 @@ BodyMultiRect.prototype.size = function() {
 }
 
 
-BodyMultiRect.prototype.update = function(elapsed_time) {
-
+BodyMultiRect.prototype.set_frame_no = function(frame_no) {
+    this.frame_no = frame_no;
 }
 
 
-BodyMultiRect.prototype.draw_collision = function(context,frame_no,x,y) {
+BodyMultiRect.prototype.update = function(elapsed_time) {
+    this.frame_no = ++this.frame_no % this.collision.length;
+}
 
-    var len = this.collision[frame_no].length;
+
+BodyMultiRect.prototype.draw_collision = function(context,x,y) {
+
+    var len = this.collision[this.frame_no].length;
     for (var i = 0; i < len; ++i) {
-        var clsn = this.collision[frame_no][i];
+        var clsn = this.collision[this.frame_no][i];
         context.strokeStyle = '#ffffff';
         context.strokeRect(clsn.x+x,clsn.y+y,clsn.w,clsn.h);
     }
@@ -410,6 +427,11 @@ Sprite.prototype.single_frame_rect = function(frame) {
 }
 
 
+Sprite.prototype.set_frame_no = function(frame_no) {
+    this.frame_no = frame_no;
+}
+
+
 Sprite.prototype.clear = function() {
     this.frames = [];
     this.frame_no = 0;
@@ -418,20 +440,16 @@ Sprite.prototype.clear = function() {
 
 // this must be updated to be more versatile
 Sprite.prototype.update = function(elapsed_time) {
-    // this.frame_no = ++this.frame_no % this.frames.length;
+    this.frame_no = ++this.frame_no % this.frames.length;
 }
 
 
-Sprite.prototype.draw = function(context,frame_no,x,y) {
-    var rect = this.frames[frame_no];
-
-    //console.log(rect);
-
+Sprite.prototype.draw = function(context,x,y) {
+    var rect = this.frames[this.frame_no];
     context.drawImage(this.img,
         rect.x,rect.y,rect.w,rect.h,
         x,y,rect.w,rect.h);
 }
-
 
 
 
@@ -506,7 +524,6 @@ World.prototype.draw = function(context) {
 
 
 
-
 // TODO add sprite to this class
 //      perhaps just pass it at draw?
 function Laser(x,y,w,h,vel_y) {
@@ -573,9 +590,10 @@ Cannon.prototype.release = function() {
 
 Cannon.prototype.update = function(elapsed_time) {
     for (var i = 0; i < this.lasers.length; ++i) {
-        this.lasers[i].update(elapsed_time);
         if (this.lasers[i].body.y+this.h < 0) {
             this.lasers.splice(i--,1);
+        } else {
+            this.lasers[i].update(elapsed_time);
         }
     }
 }
@@ -631,6 +649,12 @@ Anatomy.prototype.add_frames_rect = function(frames,collisions) {
 }
 
 
+Anatomy.prototype.set_frame_no = function(frame_no) {
+    this.sprites.set_frame_no(frame_no);
+    this.collisions.set_frame_no(frame_no);
+}
+
+
 Anatomy.prototype.move_body = function(pos) {
 
 }
@@ -658,18 +682,18 @@ Anatomy.prototype.get_collision_frame = function(pos) {
 // the frame number really doesn't need to be here
 // can put one in collisions and one in sprite
 Anatomy.prototype.update = function(elapsed_time) {
-    this.frame_no = ++this.frame_no % this.collisions.size();
     this.sprites.update(elapsed_time);
+    this.collisions.update(elapsed_time);
 }
 
 
 Anatomy.prototype.draw = function(context,x,y) {
-    this.sprites.draw(context,this.frame_no,x,y);
+    this.sprites.draw(context,x,y);
 }
 
 
 Anatomy.prototype.draw_collision = function(context,x,y) {
-    this.collisions.draw_collision(context,this.frame_no,x,y);
+    this.collisions.draw_collision(context,x,y);
 }
 
 
@@ -853,7 +877,6 @@ var ASTEROID_STATE = Object.freeze({
 function Asteroid(x,y) {
     this.anatomy = {};
     this.init_vectors(x,y);
-    //this.set_state(ASTEROID_STATE.TUMBLE);
 }
 
 
@@ -875,7 +898,6 @@ Asteroid.prototype.set_state = function(state) {
 }
 
 
-
 Asteroid.prototype.add_frame = function(Body,filepath,state,sprites,collisions) {
     var anatomy = new Anatomy(Body);
     anatomy.init(filepath,MediaManager);
@@ -891,7 +913,6 @@ Asteroid.prototype.update = function(elapsed_time) {
 
 
 Asteroid.prototype.draw = function(context) {
-    //console.log(this.anatomy[this.state]);
     this.anatomy[this.state].draw(context,this.pos.x,this.pos.y);
 }
 
@@ -899,6 +920,7 @@ Asteroid.prototype.draw = function(context) {
 Asteroid.prototype.draw_collision = function(context) {
     this.anatomy[this.state].draw_collision(context,this.pos.x,this.pos.y);
 }
+
 
 
 var Core = {
@@ -915,14 +937,15 @@ var Core = {
         game_port.textContent = '';
         game_port.appendChild(this.canvas);
 
-
         this.input = new Input();
 
+
+        // TODO add a filereader that inputs xml files for level loading
+        //      including enemy placement and landmarks
         this.world = new World(STAR_COUNT);
 
 
         var sprite = [new Rectangle(0,0,104,81)];
-
         var collisions = [
             [
                 new Rectangle(20,16,10,58),
@@ -932,14 +955,12 @@ var Core = {
             ]
         ];
 
-
         this.player = new Player(300,500);
         this.player.set_state(PLAYER_STATE.FLY);
         this.player.add_frame(BodyMultiRect,
             'img/ship3 (3).png',PLAYER_STATE.FLY,
             sprite,collisions);
         this.player.cannon.set_exit_point(104,81);
-
 
 
         var carrier_sprite = [
@@ -955,10 +976,6 @@ var Core = {
             'img/kit2ship2flipped.png',PLAYER_STATE.FLY,
             carrier_sprite,carrier_collision);
         this.carrier.set_velocity(0,0.1);
-
-
-        // TODO add a filereader that inputs xml files for level loading
-        //      including enemy placement and landmarks
 
 
         var w = 128, h = 128;
@@ -1000,8 +1017,8 @@ var Core = {
     },
 
 
+    // TODO find out way to prevent button nonresponsiveness ...!!!
     handle_input: function() {
-
 
         if (this.input.was_key_pressed(KEY.SPACE)) {
             this.player.fire();
@@ -1009,7 +1026,6 @@ var Core = {
         else if (this.input.was_key_released(KEY.SPACE)) {
             this.player.release_trigger();
         }
-
 
         if (this.input.is_key_held(KEY.DOWN) && this.input.is_key_held(KEY.UP)) {
             this.player.stop_moving_vertically();
@@ -1024,7 +1040,6 @@ var Core = {
             this.player.stop_moving_vertically();
         }
 
-
         if (this.input.is_key_held(KEY.RIGHT) && this.input.is_key_held(KEY.LEFT)) {
             this.player.stop_moving_horizontally();
         }
@@ -1037,7 +1052,6 @@ var Core = {
         else if (!this.input.is_key_held(KEY.RIGHT) && !this.input.is_key_held(KEY.LEFT)){
             this.player.stop_moving_horizontally();
         }
-
 
         this.input.begin_new_frame();
 
@@ -1084,6 +1098,5 @@ var Core = {
 function run() {
     Core.init();
 }
-
 
 

@@ -3,10 +3,7 @@
 // and units
 
 
-
-
 var Body = {
-
 
     init_vectors: function(x,y) {
         this.pos = new Pos2D(x,y);
@@ -14,38 +11,31 @@ var Body = {
         this.accel = new Vec2D(0,0);
     },
 
-
     init_pos: function(x,y) {
         this.pos = new Pos2D(x,y);
     },
-
 
     init_vel: function() {
         this.vel = new Vec2D(0,0);
     },
 
-
     init_accel: function() {
         this.accel = new Vec2D(0,0);
     },
-
 
     set_pos: function(pos) {
         this.pos.x = pos.x;
         this.pos.y = pos.y;
     },
 
-
     set_state: function(state) {
         this.state = state;
     },
-
 
     add_sprite: function(filepath,state,x,y,w,h) {
         this.sprites[state] = new Sprite(x,y,w,h);
         this.sprites[state].init(filepath,MediaManager);
     },
-
 
 };
 
@@ -61,8 +51,6 @@ var ASTEROID_STATE = Object.freeze({
 //      and various 'skeleton configs'
 //      create a frame class which holds both sprite and skeleton
 //      then refactor to understand new body and circle class
-
-
 
 
 var RectBody = {
@@ -98,21 +86,16 @@ var RectBody = {
 
     },
 
-
 };
 
 
 
 var MultiRectBody = {
 
-
-    add_collision: function(x,y,w,h) {
-        
+    add_collision: function(x,y,w,h) {        
         this.collisions.push(new Rectangle(
             this.pos.x+x,this.pos.y+y,w,h));
-        
     },
-
 
     move_body: function(offset) {
 
@@ -126,11 +109,9 @@ var MultiRectBody = {
 
     },
 
-
     draw_collision: function(context,color) {
 
         context.strokeStyle = color;
-
         var len = this.collisions.length;
         for (var i = 0; i < len; ++i) {
             context.strokeRect(
@@ -142,11 +123,7 @@ var MultiRectBody = {
 
     },
 
-
 };
-
-
-
 
 
 
@@ -223,7 +200,6 @@ Anatomy.prototype.rectify_collision = function(collisions,pos) {
 }
 
 
-
 // REMEMBER! collision rects are offsets from sprite
 // this will also be the case with physics calculations
 // TODO make collision rects absolute in world space (?)
@@ -263,18 +239,9 @@ Anatomy.prototype.draw_collision = function(context,pos) {
 
 
 
-
-
 var ASTR = Object.freeze({
     FLY: 0,
 });
-
-
-
-//function Pos2D(x,y) {
-//    this.x = x;
-//    this.y = y;
-//}
 
 
 
@@ -322,8 +289,6 @@ Asteroid.prototype.draw = function(context) {
 Asteroid.prototype.draw_collision = function(context) {
     this.anatomy[this.state].draw_collision(context,this.pos);
 }
-
-
 
 
 
@@ -493,7 +458,4 @@ function run() {
 
 
 }
-
-
-
 
