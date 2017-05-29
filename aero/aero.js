@@ -1,9 +1,9 @@
 // aerofighters clone
 //
+//
 // TODO BIG IDEAS
 //
-//      to each organism:
-//      add object of frames....
+//      add object of frames to each organism
 //          a frame is:
 //              animated sprite array
 //              collision shape array
@@ -17,14 +17,23 @@
 //          like a Turing machine, almost
 //          this simulates artificial intelligence
 //
+//      a map reader
+//          letter represents enemy/landmark
+//          variable to lookup action in table
+//          coordinates
 //
+//      make more accurate main loop timing
+//
+//
+//
+
 
 
 var MSEC_PER_SEC = 1000;
 var FRAMES_PER_SEC = 30;
 var TIME_INTERVAL = MSEC_PER_SEC / FRAMES_PER_SEC;
-var CANVAS_WIDTH = 800;
-var CANVAS_HEIGHT = 600;
+var CANVAS_WIDTH = 720;
+var CANVAS_HEIGHT = 540;
 
 var ACCEL_START = 0.005;
 var ACCEL_STOP = 0.0;
@@ -46,6 +55,14 @@ var KEY = Object({
     LEFT:37,
     SPACE:32
 });
+
+
+var GAME_STATE = Object.freeze({
+    PLAY:0,
+    PAUSE:1,
+    QUIT:2
+});
+
 
 
 var PLAYER_STATE = Object.freeze({
@@ -493,7 +510,9 @@ World.prototype.init_stars = function(count) {
 //      have filereader in World func
 //      pass out file that was read
 //      and add here, with pos and vel
-World.prototype.init_enemy_layout = function(enemies,layout) {
+World.prototype.init_map = function(enemies,layout) {
+
+    
 
 }
 
@@ -908,6 +927,7 @@ Asteroid.prototype.add_frame = function(Body,filepath,state,sprites,collisions) 
 
 Asteroid.prototype.update = function(elapsed_time) {
     this.pos.y += this.vel.y * elapsed_time;
+    this.pos.x += this.vel.x * elapsed_time;
     this.anatomy[this.state].update(elapsed_time);
 }
 
@@ -931,6 +951,8 @@ var Core = {
         this.canvas = document.createElement('canvas');
         this.canvas.width = CANVAS_WIDTH;
         this.canvas.height = CANVAS_HEIGHT;
+        var canvas = document.createElement('canvas');
+        this.canvas.style.backgroundColor = '#000000';
         this.context = this.canvas.getContext('2d');
         
         var game_port = document.getElementById('game-port');
@@ -939,13 +961,12 @@ var Core = {
 
         this.input = new Input();
 
-
         // TODO add a filereader that inputs xml files for level loading
         //      including enemy placement and landmarks
         this.world = new World(STAR_COUNT);
 
 
-        var sprite = [new Rectangle(0,0,104,81)];
+        var sprite = [ new Rectangle(0,0,104,81) ];
         var collisions = [
             [
                 new Rectangle(20,16,10,58),
@@ -955,7 +976,7 @@ var Core = {
             ]
         ];
 
-        this.player = new Player(300,500);
+        this.player = new Player(300,400);
         this.player.set_state(PLAYER_STATE.FLY);
         this.player.add_frame(BodyMultiRect,
             'img/ship3 (3).png',PLAYER_STATE.FLY,
@@ -963,12 +984,8 @@ var Core = {
         this.player.cannon.set_exit_point(104,81);
 
 
-        var carrier_sprite = [
-            new Rectangle(0,0,88,110)
-        ];
-        var carrier_collision = [
-            new Rectangle(24,10,40,90)
-        ];
+        var carrier_sprite = [ new Rectangle(0,0,88,110) ];
+        var carrier_collision = [ new Rectangle(24,10,40,90) ];
 
         this.carrier = new Carrier(200,-200);
         this.carrier.set_state(PLAYER_STATE.FLY);
@@ -985,7 +1002,7 @@ var Core = {
         for (var r = 0; r < 4; ++r) {
             for (var c = 0; c < 8; ++c) {
                 asteroid_sprite.push(new Rectangle(c*w,r*h,w,h));
-                asteroid_collision.push(new Circle(dim,dim,dim));
+                asteroid_collision.push(new Circle(dim,dim,dim-18));
             }
         }
 
@@ -997,6 +1014,12 @@ var Core = {
             asteroid_sprite,asteroid_collision);
 
 
+        // TODO create while loop
+        //      setInterval is not consistent enough
+
+
+        //window.requestAnimationFrame(this.loop);
+        
         var self = this;
         setInterval(function(){
             self.handle_input();
@@ -1014,6 +1037,16 @@ var Core = {
         InheritFrom(Body,Enemy);
         InheritFrom(MultiRectBody,Enemy);
 
+    },
+
+
+    // TODO make this better
+    //      this is not so good now
+    loop: function(time_stamp) {
+
+        
+
+        window.requestAnimationFrame(loop);
     },
 
 
@@ -1058,6 +1091,8 @@ var Core = {
     },
 
 
+    // TODO sprite dependency injections to world class
+    //      and test for collisions in these methods
     update: function(elapsed_time) {
 
         this.world.update(elapsed_time);
@@ -1095,8 +1130,8 @@ var Core = {
 
 
 
-function run() {
+window.addEventListener('load',function() {
     Core.init();
-}
+});
 
 

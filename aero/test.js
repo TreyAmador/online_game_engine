@@ -3,6 +3,41 @@
 // and units
 
 
+function run_map() {
+
+    document.addEventListener('load',function(event) {
+        var files = event.target.files;
+        for (var i = 0, f; f = files[i]; ++i) {
+            var reader = new FileReader();
+            reader.onload = function(evnt) {
+                var contents = evnt.target.result;
+                var lines = contents.split('\n');
+                console.log(contents);
+            };
+            reader.readAsText(f);
+        }
+    });
+
+}
+
+
+
+function uploader() {
+    var preview = document.querySelector('img');
+    var file = document.querySelector('input[type=file]').files[0];
+    var reader = new FileReader();
+
+    reader.addEventListener('load',function() {
+        preview.src = reader.result;
+    },false);
+
+    if (file) {
+        reader.readAsDataURL(file);
+    }
+}
+
+
+
 var Body = {
 
     init_vectors: function(x,y) {
@@ -408,7 +443,10 @@ Background.prototype.draw = function(context,canvas) {
 
 
 
-function run() {
+function run_core() {
+
+    var CANVAS_WIDTH = 800;
+    var CANVAS_HEIGHT = 600;
 
 
     this.canvas = document.createElement('canvas');
@@ -456,6 +494,15 @@ function run() {
         asteroids.draw_collision(self.context);
     },1000/30);
 
+
+}
+
+
+
+function run() {
+    //run_core();
+
+    run_map();
 
 }
 
