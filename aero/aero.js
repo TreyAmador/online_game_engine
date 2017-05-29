@@ -1,6 +1,5 @@
 // aerofighters clone
-
-
+//
 // TODO BIG IDEAS
 //
 //      to each organism:
@@ -11,15 +10,13 @@
 //                  collision shape inherited by body
 //              frame_no index which indicates frame
 //
-
-
-
-//function Enemy(x,y,w,h) {
-    // TODO give certain enemies action_string
-    //      a string representing a sequence of actions
-    //      to preform... gives illusion of AI
-//    this.action_string = 'abcdefg';
-//}
+//      fix the controls
+//          they are wonky
+//
+//      give enemies a string of commands they execute
+//          like a Turing machine, almost
+//          this simulates artificial intelligence
+//
 
 
 
@@ -32,7 +29,7 @@ var CANVAS_HEIGHT = 600;
 var ACCEL_START = 0.005;
 var ACCEL_STOP = 0.0;
 var MAX_VEL_MAG = 0.5;
-var FRICTION = 0.9;
+var WIND_RESISTANCE = 0.9;
 
 var STAR_COUNT = 25;
 var MAX_STAR_VEL = 0.3;
@@ -72,10 +69,6 @@ var ENEMY_ACTIONS = Object({
 
 
 function Input() {
-    this.held_keys = {};
-    this.pressed_keys = {};
-    this.released_keys = {};
-    this.timer = new Date();
     this.init();
 }
 
@@ -115,15 +108,20 @@ Input.prototype.is_key_held = function(key) {
 
 Input.prototype.init = function() {
 
+    this.held_keys = {};
+    this.pressed_keys = {};
+    this.released_keys = {};
+    this.timer = new Date();
+
     var self = this;
     window.addEventListener('keyup',function(event) { 
         self.key_up_event(event); 
-    },false);
-
+    });
+    
     window.addEventListener('keydown',function(event) {
         self.key_down_event(event);
-    },false);
-
+    });
+    
 }
 
 
@@ -236,12 +234,12 @@ var Physics = {
     },
 
 
-    friction: function(f,x) {
+    wind_resistance: function(f,x) {
         return f*x;
     },
 
 
-    friction_2d: function(f,p) {
+    wind_resistance_2d: function(f,p) {
         p.x *= f;
         p.y *= f;
         return p;
@@ -272,6 +270,34 @@ var Calculator = {
 
 };
 
+
+
+function BodyRect() {
+    this.collisions = null;
+}
+
+
+BodyRect.prototype.add_collision = function(collision) {
+    this.collisions = collision;
+}
+
+
+BodyRect.prototype.detect_collision = function(x,y) {
+
+}
+
+
+BodyRect.prototype.update = function(elapsed_time) {
+
+}
+
+
+BodyRect.prototype.draw_collision = function(context,x,y) {
+    context.strokeStyle = '#ffffff';
+    context.strokeRect(
+        this.collisions.x+x,this.collisions.y+y,
+        this.collisions.w,this.collisions.h);
+}
 
 
 
@@ -701,7 +727,7 @@ Player.prototype.set_laser_dimension = function(w,h) {
 Player.prototype.update = function(elapsed_time) {
 
     this.vel = Physics.velocity_delta_2d(this.accel,this.vel,elapsed_time);
-    this.vel = Physics.friction_2d(FRICTION,this.vel);
+    this.vel = Physics.wind_resistance_2d(WIND_RESISTANCE,this.vel);
 
     if (this.vel.magnitude() > MAX_VEL_MAG)
         this.vel.normalize(MAX_VEL_MAG);
@@ -726,36 +752,56 @@ Player.prototype.draw_collision = function(context) {
 
 
 
+function Carrier(x,y) {
+    this.anatomy = null;
+    this.state = 0;
+    this.init_vectors(x,y);
+}
+
+
+Carrier.prototype.init_vectors = function(x,y) {
+    this.pos = new Pos2D(x,y);
+    this.vel = new Vec2D(0,0);
+    this.accel = new Vec2D(0,0);
+}
+
+
+Carrier.prototype.set_state = function(state) {
+    this.state = state;
+}
+
+
+Carrier.prototype.set_velocity = function(x,y) {
+    this.vel.x = x;
+    this.vel.y = y;
+}
+
+
+Carrier.prototype.add_frame = function(Body,filepath,state,sprites,collisions) {
+    this.anatomy = new Anatomy(Body);
+    this.anatomy.init(filepath,MediaManager);
+    this.anatomy.add_frames_rect(sprites,collisions);
+}
+
+
+Carrier.prototype.update = function(elapsed_time) {
+    this.pos.y += this.vel.y * elapsed_time;
+}
+
+
+Carrier.prototype.draw = function(context) {
+    this.anatomy.draw(context,this.pos.x,this.pos.y);
+}
+
+
+Carrier.prototype.draw_collision = function(context) {
+    this.anatomy.draw_collision(context,this.pos.x,this.pos.y);
+}
+
+
+
 // TODO current enemy should inherit single rect
 
-function Enemy(x,y) {
-    
-    this.sprites = {};
-    this.collisions = [];
-    this.state = PLAYER_STATE.FLY;
-    this.def_velocity = 0.1;
-    this.init_vectors(x,y);
-    
-}
-
-
-Enemy.prototype.update = function(elapsed_time) {
-    var delta = new Pos2D(0,this.def_velocity * elapsed_time);
-    this.move_body(delta);
-}
-
-
-Enemy.prototype.draw = function(context) {
-    this.sprites[this.state].draw(context,this.pos.x,this.pos.y);    
-}
-
-
-
-function Enemies(layout) {
-
-    this.enemies = [];
-
-}
 
 
 
@@ -774,14 +820,13 @@ var Core = {
         game_port.appendChild(this.canvas);
 
 
-        //this.init_inheritance();
-
         this.input = new Input();
 
         this.world = new World(STAR_COUNT);
 
 
         var sprite = [new Rectangle(0,0,104,81)];
+
         var collisions = [
             [
                 new Rectangle(20,16,10,58),
@@ -800,30 +845,20 @@ var Core = {
         this.player.cannon.set_exit_point(104,81);
 
 
-        //this.player = new Player(300,500);
-        //this.player.set_state(PLAYER_STATE.FLY);
-        //this.player.add_frame('img/ship3 (3).png',PLAYER_STATE.FLY,
-        //    [new Rectangle(0,0,104,81)],[new Rectangle(20,16,64,58)]);
-        //this.player.cannon.set_exit_point(104,81);
 
+        var carrier_sprite = [
+            new Rectangle(0,0,88,110)
+        ];
+        var carrier_collision = [
+            new Rectangle(24,10,40,90)
+        ];
 
-        //this.player.add_sprite('img/ship3 (3).png',
-        //    PLAYER_STATE.FLY,0,0,104,81);
-        //this.player.add_collision(20,16,10,58);
-        //this.player.add_collision(74,16,10,58);
-        //this.player.add_collision(30,26,44,16);
-        //this.player.add_collision(42,10,20,16);
-        //this.player.cannon.set_exit_point(104,81);
-
-
-        //this.enemy = new Enemy(400,-100);
-        //this.enemy.set_state(PLAYER_STATE.FLY);
-        //this.enemy.add_sprite('img/kit2ship2flipped.png',
-        //    PLAYER_STATE.FLY,0,0,88,110);
-        //this.enemy.add_collision(24,10,40,90);
-        
-
-        //var world = new World(STAR_COUNT);
+        this.carrier = new Carrier(200,-200);
+        this.carrier.set_state(PLAYER_STATE.FLY);
+        this.carrier.add_frame(BodyRect,
+            'img/kit2ship2flipped.png',PLAYER_STATE.FLY,
+            carrier_sprite,carrier_collision);
+        this.carrier.set_velocity(0,0.1);
 
 
         // TODO add a filereader that inputs xml files for level loading
@@ -852,21 +887,16 @@ var Core = {
 
     handle_input: function() {
 
-        if (this.input.is_key_held(KEY.RIGHT) && this.input.is_key_held(KEY.LEFT)) {
-            this.player.stop_moving_horizontally();
-        }
-        else if (this.input.is_key_held(KEY.RIGHT)) {
-            this.player.move_right();
-        }
-        else if (this.input.is_key_held(KEY.LEFT)){
-            this.player.move_left();
-        }
-        else if (!this.input.is_key_held(KEY.RIGHT) && !this.input.is_key_held(KEY.LEFT)){
-            this.player.stop_moving_horizontally();
+
+        if (this.input.was_key_pressed(KEY.SPACE)) {
+            this.player.fire();
+        } 
+        else if (this.input.was_key_released(KEY.SPACE)) {
+            this.player.release_trigger();
         }
 
 
-        if (this.input.is_key_held(KEY.UP) && this.input.is_key_held(KEY.DOWN)) {
+        if (this.input.is_key_held(KEY.DOWN) && this.input.is_key_held(KEY.UP)) {
             this.player.stop_moving_vertically();
         }
         else if (this.input.is_key_held(KEY.UP)) {
@@ -874,16 +904,25 @@ var Core = {
         }
         else if (this.input.is_key_held(KEY.DOWN)) {
             this.player.move_down();
-        }
-        else if (!this.input.is_key_held(KEY.UP) && !this.input.is_key_held(KEY.DOWN)) {
+        }        
+        else if (!this.input.is_key_held(KEY.DOWN) && !this.input.is_key_held(KEY.UP)) {
             this.player.stop_moving_vertically();
         }
 
-        if (this.input.was_key_pressed(KEY.SPACE)) {
-            this.player.fire();
-        } else if (this.input.was_key_released(KEY.SPACE)) {
-            this.player.release_trigger();
+
+        if (this.input.is_key_held(KEY.RIGHT) && this.input.is_key_held(KEY.LEFT)) {
+            this.player.stop_moving_horizontally();
         }
+        else if (this.input.is_key_held(KEY.LEFT)){
+            this.player.move_left();
+        }
+        else if (this.input.is_key_held(KEY.RIGHT)) {
+            this.player.move_right();
+        }
+        else if (!this.input.is_key_held(KEY.RIGHT) && !this.input.is_key_held(KEY.LEFT)){
+            this.player.stop_moving_horizontally();
+        }
+
 
         this.input.begin_new_frame();
 
@@ -892,7 +931,7 @@ var Core = {
 
     update: function(elapsed_time) {
         this.world.update(elapsed_time);
-        //this.enemy.update(elapsed_time);
+        this.carrier.update(elapsed_time);
         this.player.update(elapsed_time);
     },
 
@@ -900,10 +939,10 @@ var Core = {
     draw: function() {
         this.clear();
         this.world.draw(this.context);
-        //this.enemy.draw(this.context);
+        this.carrier.draw(this.context);
+        this.carrier.draw_collision(this.context);
         this.player.draw(this.context);
         this.player.draw_collision(this.context);
-        //this.enemy.draw_collision(this.context,'#ff00ff');
     },
 
 
