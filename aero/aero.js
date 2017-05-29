@@ -400,6 +400,9 @@ Sprite.prototype.update = function(elapsed_time) {
 
 Sprite.prototype.draw = function(context,frame_no,x,y) {
     var rect = this.frames[frame_no];
+
+    console.log(rect);
+
     context.drawImage(this.img,
         rect.x,rect.y,rect.w,rect.h,
         x,y,rect.w,rect.h);
@@ -644,13 +647,20 @@ Anatomy.prototype.get_collision_frame = function(pos) {
 
 // TODO reviese this to be less error prone
 //      use something other than this.collisions.length;
+
+// TODO error here:  this.collisions.length undefined!
+
+
 Anatomy.prototype.update = function(elapsed_time) {
-    this.frame_no = ++this.frame_no % this.collisions.length;
+    this.frame_no = ++this.frame_no % this.collisions.length;    
     this.sprites.update(elapsed_time);
 }
 
 
 Anatomy.prototype.draw = function(context,x,y) {
+
+    console.log(this.frame_no);
+
     this.sprites.draw(context,this.frame_no,x,y);
 }
 
@@ -915,7 +925,7 @@ var Core = {
                 new Rectangle(42,10,20,16)
             ]
         ];
-        
+
 
         this.player = new Player(300,500);
         this.player.set_state(PLAYER_STATE.FLY);
@@ -959,9 +969,9 @@ var Core = {
         this.asteroid = new Asteroid(400,-200);
         this.asteroid.set_state(ASTEROID_STATE.TUMBLE);
         this.asteroid.set_velocity(0,0.1);
-        //this.asteroid.add_frame(BodyCirc,
-        //    'img/asteroid_01.png',ASTEROID_STATE.TUMBLE,
-        //    asteroid_sprite,asteroid_collision);
+        this.asteroid.add_frame(BodyCirc,
+            'img/asteroid_01.png',ASTEROID_STATE.TUMBLE,
+            asteroid_sprite,asteroid_collision);
 
 
         var self = this;
@@ -1032,7 +1042,7 @@ var Core = {
 
         this.world.update(elapsed_time);
         this.carrier.update(elapsed_time);
-        //this.asteroid.update(elapsed_time);
+        this.asteroid.update(elapsed_time);
         this.player.update(elapsed_time);
 
     },
@@ -1046,8 +1056,8 @@ var Core = {
         this.carrier.draw(this.context);
         this.carrier.draw_collision(this.context);
 
-        //this.asteroid.draw(this.context);
-        //this.asteroid.draw_collision(this.context);
+        this.asteroid.draw(this.context);
+        this.asteroid.draw_collision(this.context);
 
         this.player.draw(this.context);
         this.player.draw_collision(this.context);
