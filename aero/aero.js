@@ -270,12 +270,12 @@ var Calculator = {
 
 
 function BodyRect() {
-    this.collisions = null;
+    this.collisions = [];
 }
 
 
 BodyRect.prototype.add_collision = function(collision) {
-    this.collisions = collision;
+    this.collisions.push(collision);
 }
 
 
@@ -284,27 +284,33 @@ BodyRect.prototype.detect_collision = function(x,y) {
 }
 
 
+BodyRect.prototype.size = function() {
+    return this.collisions.length;
+}
+
+
 BodyRect.prototype.update = function(elapsed_time) {
 
 }
 
 
-BodyRect.prototype.draw_collision = function(context,x,y) {
+BodyRect.prototype.draw_collision = function(context,frame_no,x,y) {
     context.strokeStyle = '#ffffff';
+    var rect = this.collisions[frame_no];
     context.strokeRect(
-        this.collisions.x+x,this.collisions.y+y,
-        this.collisions.w,this.collisions.h);
+        rect.x+x,rect.y+y,
+        rect.w,rect.h);
 }
 
 
 
 function BodyCirc(x,y) {
-    this.collision = null;
+    this.collision = [];
 }
 
 
 BodyCirc.prototype.add_collision = function(collision) {
-    this.collision = collision;
+    this.collision.push(collision);
 }
 
 
@@ -316,32 +322,43 @@ BodyCirc.prototype.detect_collision = function() {
 }
 
 
+BodyCirc.prototype.size = function() {
+    return this.collision.length;
+}
+
+
+// TODO perhaps make frame counter a member variable
+//      and update frame counter here
 BodyCirc.prototype.update = function(elapsed_time) {
 
 }
 
 
-BodyCirc.prototype.draw_collision = function(context,x,y) {
+BodyCirc.prototype.draw_collision = function(context,frame_no,x,y) {
+    var rect = this.collision[frame_no];
     context.strokeStyle = '#ffffff';
     context.beginPath();
     context.arc(
-        this.collision.x+x,this.collision.y+y,
-        this.collision.r,0,Math.PI*2);
+        rect.x+x,rect.y+y,
+        rect.r,0,Math.PI*2);
     context.stroke();
 }
 
 
 
 function BodyMultiRect() {
-    this.collisions = [];
+    this.collision = [];
 }
 
 
 BodyMultiRect.prototype.add_collision = function(collision) {
+    var clsn = [];
     var len = collision.length;
     for (var i = 0; i < len; ++i) {
-        this.collisions.push(collision[i]);
+        clsn.push(collision[i]);
     }
+    this.collision.push(clsn);
+    console.log(collision.length);
 }
 
 
@@ -350,18 +367,25 @@ BodyMultiRect.prototype.detect_collision = function(x,y) {
 }
 
 
+BodyMultiRect.prototype.size = function() {
+    return this.collision.length;
+}
+
+
 BodyMultiRect.prototype.update = function(elapsed_time) {
 
 }
 
 
-BodyMultiRect.prototype.draw_collision = function(context,x,y) {
-    var len = this.collisions.length;
+BodyMultiRect.prototype.draw_collision = function(context,frame_no,x,y) {
+
+    var len = this.collision[frame_no].length;
     for (var i = 0; i < len; ++i) {
-        var col = this.collisions[i];
+        var clsn = this.collision[frame_no][i];
         context.strokeStyle = '#ffffff';
-        context.strokeRect(col.x+x,col.y+y,col.w,col.h);
+        context.strokeRect(clsn.x+x,clsn.y+y,clsn.w,clsn.h);
     }
+
 }
 
 
@@ -401,7 +425,7 @@ Sprite.prototype.update = function(elapsed_time) {
 Sprite.prototype.draw = function(context,frame_no,x,y) {
     var rect = this.frames[frame_no];
 
-    console.log(rect);
+    //console.log(rect);
 
     context.drawImage(this.img,
         rect.x,rect.y,rect.w,rect.h,
@@ -429,7 +453,6 @@ function StarRand(x,y) {
 //      which will be read by filereader
 //      then will have velocity
 //      a celestial body, if you will
-
 function World(count) {
     this.init_stars(count);
     this.size = 1;
@@ -446,7 +469,6 @@ World.prototype.init_stars = function(count) {
 }
 
 
-
 // TODO init map here
 //      pass in this.enemies from core
 //      and add new enemies
@@ -454,8 +476,6 @@ World.prototype.init_stars = function(count) {
 //      pass out file that was read
 //      and add here, with pos and vel
 World.prototype.init_enemy_layout = function(enemies,layout) {
-
-
 
 }
 
@@ -470,7 +490,6 @@ World.prototype.update = function(elapsed_time) {
         }
     }
 }
-
 
 
 // TODO update this to draw sprite, not circles ?
@@ -592,6 +611,7 @@ function InheritFrom(Super,Sub) {
 function Anatomy(Body) {
     this.sprites = new Sprite();
     this.collisions = new Body();
+    this.Body = Body;
     this.frame_no = 0;
 }
 
@@ -611,16 +631,6 @@ Anatomy.prototype.add_frames_rect = function(frames,collisions) {
 }
 
 
-// probably not necessary now
-//Anatomy.prototype.rectify_collision = function(collisions,pos) {
-//    var len = collisions.length;
-//    for (var i = 0; i < len; ++i) {
-//        collisions[i].x += pos.x;
-//        collisions[i].y += pos.y;
-//    }
-//}
-
-
 Anatomy.prototype.move_body = function(pos) {
 
 }
@@ -635,40 +645,32 @@ Anatomy.prototype.detect_collisions = function(pos) {
 }
 
 
-// will this actually work now?
+// TODO return the collision or series of collisions
+//      by having function in the body classes
 Anatomy.prototype.get_collision_frame = function(pos) {
-    var rect = this.collisions[this.frame_no];
-    var clsn = new Rectangle(
-        rect.x+pos.x,rect.y+pos.y,
-        rect.w,rect.h);
-    return clsn;
+    
 }
 
 
 // TODO reviese this to be less error prone
 //      use something other than this.collisions.length;
 
-// TODO error here:  this.collisions.length undefined!
-
-
+// the frame number really doesn't need to be here
+// can put one in collisions and one in sprite
 Anatomy.prototype.update = function(elapsed_time) {
-    this.frame_no = ++this.frame_no % this.collisions.length;    
+    this.frame_no = ++this.frame_no % this.collisions.size();
     this.sprites.update(elapsed_time);
 }
 
 
 Anatomy.prototype.draw = function(context,x,y) {
-
-    console.log(this.frame_no);
-
     this.sprites.draw(context,this.frame_no,x,y);
 }
 
 
 Anatomy.prototype.draw_collision = function(context,x,y) {
-    this.collisions.draw_collision(context,x,y);
+    this.collisions.draw_collision(context,this.frame_no,x,y);
 }
-
 
 
 
@@ -893,6 +895,10 @@ Asteroid.prototype.draw = function(context) {
     this.anatomy[this.state].draw(context,this.pos.x,this.pos.y);
 }
 
+
+Asteroid.prototype.draw_collision = function(context) {
+    this.anatomy[this.state].draw_collision(context,this.pos.x,this.pos.y);
+}
 
 
 var Core = {
