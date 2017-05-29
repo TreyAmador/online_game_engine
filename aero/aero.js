@@ -17,7 +17,7 @@
 //          like a Turing machine, almost
 //          this simulates artificial intelligence
 //
-
+//
 
 
 var MSEC_PER_SEC = 1000;
@@ -146,12 +146,10 @@ function Pos2D(x,y) {
 }
 
 
-
 function Vec2D(x,y) {
     this.x = x;
     this.y = y;
 }
-
 
 
 Vec2D.prototype.magnitude = function() {
@@ -187,7 +185,6 @@ function Rectangle(x,y,w,h) {
     this.w = w;
     this.h = h;
 }
-
 
 
 function Circle(x,y,r) {
@@ -297,6 +294,40 @@ BodyRect.prototype.draw_collision = function(context,x,y) {
     context.strokeRect(
         this.collisions.x+x,this.collisions.y+y,
         this.collisions.w,this.collisions.h);
+}
+
+
+
+function BodyCirc(x,y) {
+    this.collision = null;
+}
+
+
+BodyCirc.prototype.add_collision = function(collision) {
+    this.collision = collision;
+}
+
+
+BodyCirc.prototype.detect_collision = function() {
+    // TODO implement collision detection
+    //      this can take a laser point and calc trigonometric distance 
+    //      between point and centeroid, if distance smaller than radius
+    //      then you have a collision
+}
+
+
+BodyCirc.prototype.update = function(elapsed_time) {
+
+}
+
+
+BodyCirc.prototype.draw_collision = function(context,x,y) {
+    context.strokeStyle = '#ffffff';
+    context.beginPath();
+    context.arc(
+        this.collision.x+x,this.collision.y+y,
+        this.collision.r,0,Math.PI*2);
+    context.stroke();
 }
 
 
@@ -612,7 +643,7 @@ Anatomy.prototype.get_collision_frame = function(pos) {
 
 
 // TODO reviese this to be less error prone
-//      use something other than this.collisions.lenght;
+//      use something other than this.collisions.length;
 Anatomy.prototype.update = function(elapsed_time) {
     this.frame_no = ++this.frame_no % this.collisions.length;
     this.sprites.update(elapsed_time);
@@ -753,7 +784,7 @@ Player.prototype.draw_collision = function(context) {
 
 
 function Carrier(x,y) {
-    this.anatomy = null;
+    this.anatomy = {};
     this.state = 0;
     this.init_vectors(x,y);
 }
@@ -778,9 +809,10 @@ Carrier.prototype.set_velocity = function(x,y) {
 
 
 Carrier.prototype.add_frame = function(Body,filepath,state,sprites,collisions) {
-    this.anatomy = new Anatomy(Body);
-    this.anatomy.init(filepath,MediaManager);
-    this.anatomy.add_frames_rect(sprites,collisions);
+    var anatomy = new Anatomy(Body);
+    anatomy.init(filepath,MediaManager);
+    anatomy.add_frames_rect(sprites,collisions);
+    this.anatomy[state] = anatomy;
 }
 
 
@@ -790,18 +822,66 @@ Carrier.prototype.update = function(elapsed_time) {
 
 
 Carrier.prototype.draw = function(context) {
-    this.anatomy.draw(context,this.pos.x,this.pos.y);
+    this.anatomy[this.state].draw(context,this.pos.x,this.pos.y);
 }
 
 
 Carrier.prototype.draw_collision = function(context) {
-    this.anatomy.draw_collision(context,this.pos.x,this.pos.y);
+    this.anatomy[this.state].draw_collision(context,this.pos.x,this.pos.y);
 }
 
 
 
-// TODO current enemy should inherit single rect
+var ASTEROID_STATE = Object.freeze({
+    TUMBLE: 0
+});
 
+
+
+function Asteroid(x,y) {
+    this.anatomy = {};
+    this.init_vectors(x,y);
+    //this.set_state(ASTEROID_STATE.TUMBLE);
+}
+
+
+Asteroid.prototype.init_vectors = function(x,y) {
+    this.pos = new Pos2D(x,y);
+    this.vel = new Vec2D(0,0);
+    this.accel = new Vec2D(0,0);
+}
+
+
+Asteroid.prototype.set_velocity = function(x,y) {
+    this.vel.x = x;
+    this.vel.y = y;
+}
+
+
+Asteroid.prototype.set_state = function(state) {
+    this.state = state;
+}
+
+
+
+Asteroid.prototype.add_frame = function(Body,filepath,state,sprites,collisions) {
+    var anatomy = new Anatomy(Body);
+    anatomy.init(filepath,MediaManager);
+    anatomy.add_frames_rect(sprites,collisions);
+    this.anatomy[state] = anatomy;
+}
+
+
+Asteroid.prototype.update = function(elapsed_time) {
+    this.pos.y += this.vel.y * elapsed_time;
+    this.anatomy[this.state].update(elapsed_time);
+}
+
+
+Asteroid.prototype.draw = function(context) {
+    //console.log(this.anatomy[this.state]);
+    this.anatomy[this.state].draw(context,this.pos.x,this.pos.y);
+}
 
 
 
@@ -863,6 +943,25 @@ var Core = {
 
         // TODO add a filereader that inputs xml files for level loading
         //      including enemy placement and landmarks
+
+
+        var w = 128, h = 128;
+        var dim = 128/2;
+        var asteroid_sprite = [];
+        var asteroid_collision = [];
+        for (var r = 0; r < 4; ++r) {
+            for (var c = 0; c < 8; ++c) {
+                asteroid_sprite.push(new Rectangle(c*w,r*h,w,h));
+                asteroid_collision.push(new Circle(dim,dim,dim));
+            }
+        }
+
+        this.asteroid = new Asteroid(400,-200);
+        this.asteroid.set_state(ASTEROID_STATE.TUMBLE);
+        this.asteroid.set_velocity(0,0.1);
+        //this.asteroid.add_frame(BodyCirc,
+        //    'img/asteroid_01.png',ASTEROID_STATE.TUMBLE,
+        //    asteroid_sprite,asteroid_collision);
 
 
         var self = this;
@@ -930,19 +1029,29 @@ var Core = {
 
 
     update: function(elapsed_time) {
+
         this.world.update(elapsed_time);
         this.carrier.update(elapsed_time);
+        //this.asteroid.update(elapsed_time);
         this.player.update(elapsed_time);
+
     },
 
 
     draw: function() {
+
         this.clear();
         this.world.draw(this.context);
+
         this.carrier.draw(this.context);
         this.carrier.draw_collision(this.context);
+
+        //this.asteroid.draw(this.context);
+        //this.asteroid.draw_collision(this.context);
+
         this.player.draw(this.context);
         this.player.draw_collision(this.context);
+
     },
 
 
