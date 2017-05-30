@@ -1,6 +1,7 @@
 // simple geometries for game!
 
 
+
 function Pos2D(x,y) {
     this.x = x;
     this.y = y;
@@ -53,4 +54,56 @@ function Circle(x,y,r) {
     this.y = y;
     this.r = r;
 }
+
+
+
+// TODO add more physics!
+var Physics = {
+
+    
+    velocity_delta: function(a,v,t) {
+        return a*t + v;
+    },
+
+
+    // pass accel and vel vector to get vel
+    velocity_delta_2d: function(a,v,t) {
+        v.x += (a.x * t);
+        v.y += (a.y * t);
+        return v;
+    },
+
+
+    kinematics: function(a,v,x,t) {
+        return (a/2)*t*t + v*t + x;
+    },
+
+
+    kinematics_2d: function(a,v,p,t) {
+        p.x = a.x/2*t*t + v.x*t + p.x;
+        p.y = a.y/2*t*t + v.y*t + p.y;
+    },
+
+
+    kinematics_delta_2d: function(a,v,t) {
+        var delta = new Pos2D(
+            a.x/2*t*t + v.x*t,
+            a.y/2*t*t + v.y*t);
+        return delta;
+    },
+
+
+    friction: function(f,v) {
+        return f*v;
+    },
+
+
+    friction_2d: function(f,v) {
+        v.x *= f;
+        v.y *= f;
+        return v;
+    }
+
+
+};
 

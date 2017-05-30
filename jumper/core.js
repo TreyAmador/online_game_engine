@@ -31,8 +31,10 @@ function Core() {
     this.canvas.width = CANVAS_WIDTH;
     this.canvas.height = CANVAS_HEIGHT;
     this.canvas.style.backgroundColor = '#eeeeee';
-    this.canvas.style.border = '1px solid #000000';
+    //this.canvas.style.border = '1px solid #000000';
     this.context = this.canvas.getContext('2d');
+
+    Input.init();
 }
 
 
@@ -44,7 +46,7 @@ Core.prototype.append_port = function() {
 
 
 // TODO add player, enemies, backgrounds, platforms, etc... here
-Core.prototype.add_entities = function() {
+Core.prototype.init_entities = function() {
     this.player = new Player(200,200,50,50);
 }
 
@@ -52,27 +54,49 @@ Core.prototype.add_entities = function() {
 Core.prototype.run = function() {
     var self = this;
     setInterval(function() {
-        self.update(FRAME_RATE);
-        self.draw(self.context);
+        self.clear();
+        self.handle_input();
+        self.update();
+        self.draw();
     },FRAME_RATE);
 }
 
 
-Core.prototype.update = function(elapsed_time) {
-    this.player.update(elapsed_time);
+Core.prototype.handle_input = function() {
+
+    if (Input.is_down(KEY.LEFT) && Input.is_down(KEY.RIGHT)) {
+        this.player.stop_moving();
+    } else if (Input.is_down(KEY.LEFT)) {
+        this.player.move_left();
+    } else if (Input.is_down(KEY.RIGHT)) {
+        this.player.move_right();
+    } else if (!Input.is_down(KEY.LEFT) && !Input.is_down(KEY.RIGHT)) {
+        this.player.stop_moving();
+    }
+
 }
 
 
-Core.prototype.draw = function(context) {
-    this.player.draw(context);
+Core.prototype.update = function() {
+    this.player.update(FRAME_RATE);
 }
 
+
+Core.prototype.draw = function() {
+    this.player.draw(this.context);
+}
+
+
+Core.prototype.clear = function(context) {
+    this.context.clearRect(0,0,
+        this.canvas.width,this.canvas.height);
+}
 
 
 window.addEventListener('load',function() {
     var core = new Core();
     core.append_port();
-    core.add_entities();
+    core.init_entities();
     core.run();
 });
 
