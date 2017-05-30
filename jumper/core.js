@@ -47,7 +47,7 @@ Core.prototype.append_port = function() {
 
 // TODO add player, enemies, backgrounds, platforms, etc... here
 Core.prototype.init_entities = function() {
-    this.player = new Player(200,200,50,50);
+    this.player = new Player(300,300,50,50);
 }
 
 
@@ -73,6 +73,11 @@ Core.prototype.handle_input = function() {
     } else if (!Input.is_down(KEY.LEFT) && !Input.is_down(KEY.RIGHT)) {
         this.player.stop_moving();
     }
+
+    if (Input.is_down(KEY.SPACE)) {
+        this.player.jump();
+    }
+
 
 }
 

@@ -102,7 +102,12 @@ var Physics = {
         v.x *= f;
         v.y *= f;
         return v;
-    }
+    },
+
+    // (a/2)*t*t + v*t + x;
+    gravity_delta: function(g,v,t) {
+        return (g/2)*t*t + v*t;
+    },
 
 
 };
