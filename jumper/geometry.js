@@ -61,8 +61,8 @@ function Circle(x,y,r) {
 var Physics = {
 
     
-    velocity_delta: function(a,v,t) {
-        return a*t + v;
+    velocity_delta: function(a,t) {
+        return a*t;
     },
 
 
@@ -85,6 +85,11 @@ var Physics = {
     },
 
 
+    kinematics_delta: function(a,v,t) {
+        return (a/2)*t*t + v*t;
+    },
+
+
     kinematics_delta_2d: function(a,v,t) {
         var delta = new Pos2D(
             a.x/2*t*t + v.x*t,
@@ -104,7 +109,7 @@ var Physics = {
         return v;
     },
 
-    // (a/2)*t*t + v*t + x;
+
     gravity_delta: function(g,v,t) {
         return (g/2)*t*t + v*t;
     },
