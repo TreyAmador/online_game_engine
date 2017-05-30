@@ -297,8 +297,26 @@ BodyRect.prototype.add_collision = function(collision) {
 }
 
 
-BodyRect.prototype.detect_collision = function(x,y) {
+BodyRect.prototype.detect_collision = function() {
 
+}
+
+
+BodyRect.prototype.detect_point_collision = function(rect,pos) {
+
+    if ((rect.x < pos.x && pos.x < rect.x+rect.w) &&
+        (rect.y < pos.y && pos.y < rect.y+rect.h)) 
+        {
+            console.log('Collision detected at (',pos.x,'x',pos.y,')');
+        }
+
+}
+
+
+// pass in position
+BodyRect.prototype.get_normalized_collision = function(pos) {
+    var rect = this.collisions[this.frame_no];
+    return new Rectangle(rect.x+pos.x,rect.y+pos.y,rect.w,rect.h);
 }
 
 
@@ -424,6 +442,35 @@ BodyMultiRect.prototype.draw_collision = function(context,x,y) {
 
 
 
+// TODO return a vector representing accel
+//      that will indicate 'recoil' accel
+//      or just return if collided
+//      then return recoil based on other parameters
+var CollisionDetector = {
+
+    
+    point_rectangle: function(pos,rect) {
+
+        if ((rect.x < pos.x && pos.x < rect.x+rect.w) &&
+            (rect.y < pos.y && pos.y < rect.y+rect.h)) 
+            {
+                console.log('Collision detected!\n',pos);
+            }
+
+    },
+
+
+    point_circle: function(pos,circ) {
+
+
+
+    },
+
+
+};
+
+
+
 // TODO add a timer to entire entity
 //      such as player or enemy
 function Sprite() {
@@ -479,6 +526,7 @@ function StarRand(x,y) {
 
 
 // TODO add a file reader
+//      NOTE: reading local files may not work...
 //      xml files will be loaded to position enemies
 //      enemies descend the screen
 //      updated offscreen with velocity * elapsed time
@@ -488,6 +536,19 @@ function StarRand(x,y) {
 //      which will be read by filereader
 //      then will have velocity
 //      a celestial body, if you will
+
+
+
+// a struct represeting the attributes of an enemy
+// this.enemy could store the uninitialized enemy object?
+function EnemyAttr(enemy,x,y,action) {
+    this.enemy = enemy;
+    this.coord = new Pos2D(x,y);
+    this.action = action;
+}
+
+
+
 function World(count) {
     this.init_stars(count);
     this.size = 1;
@@ -512,7 +573,9 @@ World.prototype.init_stars = function(count) {
 //      and add here, with pos and vel
 World.prototype.init_map = function(enemies,layout) {
 
-    
+    var map01 = [
+        
+    ];
 
 }
 
@@ -688,10 +751,16 @@ Anatomy.prototype.detect_collisions = function(pos) {
 }
 
 
+Anatomy.prototype.detect_point_collision = function(rect,pos) {
+    //this.collisions[this.frame_no].detect_point_collision(rect,pos);
+    this.collisions.detect_point_collision(rect,pos);
+}
+
+
 // TODO return the collision or series of collisions
 //      by having function in the body classes
 Anatomy.prototype.get_collision_frame = function(pos) {
-    
+    return this.collisions.get_normalized_collision(pos);
 }
 
 
@@ -804,6 +873,11 @@ Player.prototype.release_trigger = function() {
 }
 
 
+Player.prototype.get_lasers = function() {
+    return this.cannon.lasers;
+}
+
+
 Player.prototype.set_laser_dimension = function(w,h) {
     this.cannon.w = w;
     this.cannon.h = h;
@@ -868,6 +942,13 @@ Carrier.prototype.add_frame = function(Body,filepath,state,sprites,collisions) {
     anatomy.init(filepath,MediaManager);
     anatomy.add_frames_rect(sprites,collisions);
     this.anatomy[state] = anatomy;
+}
+
+
+Carrier.prototype.detect_point_collision = function(clsn_pt) {
+    var rect = this.anatomy[this.state].get_collision_frame(this.pos);
+    this.anatomy[this.state].detect_point_collision(rect,clsn_pt);
+    //this.anatomy[this.state]
 }
 
 
@@ -1094,6 +1175,21 @@ var Core = {
     // TODO sprite dependency injections to world class
     //      and test for collisions in these methods
     update: function(elapsed_time) {
+
+
+        // TODO move this elsewhere
+        //      such as to world object
+
+        var lasers = this.player.get_lasers();
+        var len = lasers.length;
+        for (var i = 0; i < len; ++i) {
+            this.carrier.detect_point_collision(new Pos2D(
+                lasers[i].body.x,lasers[i].body.x));
+        }
+
+        // move this elsewhere
+
+
 
         this.world.update(elapsed_time);
         this.carrier.update(elapsed_time);
