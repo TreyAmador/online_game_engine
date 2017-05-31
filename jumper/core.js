@@ -47,6 +47,13 @@ Core.prototype.append_port = function() {
 
 // TODO add player, enemies, backgrounds, platforms, etc... here
 Core.prototype.init_entities = function() {
+
+    this.world = new World();
+
+    // TODO something should go in here to layout map
+    //      perhaps array of platforms?
+    this.world.create_platforms([]);
+
     this.player = new Player(300,0,50,50);
 }
 
@@ -85,12 +92,20 @@ Core.prototype.handle_input = function() {
 
 
 Core.prototype.update = function() {
-    this.player.update(FRAME_RATE);
+
+    this.world.update(FRAME_RATE);
+
+    this.player.update(FRAME_RATE,this.world);
+
+    
 }
 
 
 Core.prototype.draw = function() {
     this.player.draw(this.context);
+
+    this.world.draw(this.context);
+
 }
 
 

@@ -50,20 +50,27 @@ Player.prototype.stop_moving = function() {
 }
 
 
+Player.prototype.get_collision_rect = function() {
+    return this.body;
+}
+
+
 Player.prototype.jump = function() {
     if (this.on_ground && this.rebound) {
         this.vel.y = -JUMP_VEL;
-        this.on_ground = false;
-        this.rebound = false;
+        this.on_ground = this.rebound = false;
     } else {
-        this.on_ground = false;
-        this.rebound = false;
+        this.on_ground = this.rebound = false;
     }
 }
 
 
 
 Player.prototype.recover_jump = function() {
+
+    // TODO implement conditional which 'dampens' jump
+    //      when the button is released
+
     if (this.on_ground) {
         this.rebound = true;
     }
@@ -71,32 +78,49 @@ Player.prototype.recover_jump = function() {
 
 
 
-// TODO perhaps replace the 2D kinematics with 1D
-//      more efficient, which is good to do
-Player.prototype.update = function(elapsed_time) {
-    
+Player.prototype.calculate_delta_x = function(elapsed_time) {
     this.vel.x += Physics.velocity_delta(this.accel.x,elapsed_time);
     this.vel.x = Physics.friction(FRICTION,this.vel.x);
-
     if (Math.abs(this.vel.x) > MAX_VEL_X) {
         this.vel.x = Math.sign(this.vel.x)*MAX_VEL_X;
         this.accel.x = 0.0;
     }
-    
     var delta_x = Physics.kinematics_delta(this.accel.x,this.vel.x,elapsed_time);
-    this.body.x += delta_x;
+    return delta_x;
+}
 
+
+Player.prototype.calculate_delta_y = function(elapsed_time) {
     this.vel.y += Physics.velocity_delta(GRAVITY,elapsed_time);
     var delta_y = Physics.gravity_delta(GRAVITY,this.vel.y,elapsed_time);
-    this.body.y += delta_y;
+    return delta_y;
+}
 
-    // TODO remove this hack
+
+// TODO perhaps replace the 2D kinematics with 1D
+//      more efficient, which is good to do
+Player.prototype.update = function(elapsed_time,world) {
+
+    var delta = new Pos2D(
+        this.calculate_delta_x(elapsed_time),
+        this.calculate_delta_y(elapsed_time));
+    var pos = new Pos2D(this.body.x,this.body.y);
+    
+    world.detect_collision(pos,delta);
+
+
+    this.body.x += delta.x;
+    this.body.y += delta.y;
+
+
+    // TODO remove this hack ..!
     if (this.body.y >= 400) {
         this.body.y = 400;
         this.on_ground = true;
     } else {
         this.on_ground = false;
     }
+
 
 }
 
