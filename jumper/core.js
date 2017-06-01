@@ -12,6 +12,9 @@
 //          they should move around
 //          gravity flips based on timer
 //
+//      this could be a tiled game engine
+//          however, tiles will aggregate to be a platform
+//          and move in unison which gives illusion of soldity
 //
 //
 

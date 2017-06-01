@@ -104,19 +104,23 @@ Player.prototype.update = function(elapsed_time,world) {
     var delta = new Pos2D(
         this.calculate_delta_x(elapsed_time),
         this.calculate_delta_y(elapsed_time));
-    var pos = new Pos2D(this.body.x,this.body.y);
+    //var pos = new Pos2D(this.body.x,this.body.y);
     
-    world.detect_collision(pos,delta);
+    
+
+    world.detect_collision(this.body,delta);
 
 
     this.body.x += delta.x;
-    this.body.y += delta.y;
+    //this.body.y += delta.y;
 
 
     // TODO remove this hack ..!
     if (this.body.y >= 400) {
         this.body.y = 400;
         this.on_ground = true;
+        this.vel.y = 0;
+        this.accel.y = 0;
     } else {
         this.on_ground = false;
     }

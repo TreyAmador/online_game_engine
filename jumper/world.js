@@ -10,7 +10,9 @@ function World() {
 World.prototype.create_platforms = function(platforms) {
 
     // TODO make this more functional/modular
-    this.platforms.push(new Platform(200,400,200,50));
+    this.platforms.push(new Platform(500,400,50,50));
+    this.platforms.push(new Platform(200,400,50,50));
+    this.platforms.push(new Platform(300,400,100,50));
 
 }
 
@@ -19,7 +21,10 @@ World.prototype.create_platforms = function(platforms) {
 //      first based if on ground or on wall
 //          if on ground, test x then y
 //          if on wall, test y then x
-World.prototype.detect_collision = function(pos,delta) {
+
+
+// TODO pass in player so vars for on_ground and vel.y can be set...
+World.prototype.detect_collision = function(body,delta) {
 
     var len = this.platforms.length;
     for (var i = 0; i < len; ++i) {
@@ -33,11 +38,11 @@ World.prototype.detect_collision = function(pos,delta) {
             this.collision_right(platform,delta.x);
         }
         if (delta.y >= 0) {
-            delta.y = this.collision_below(platform,delta.y);
-            delta.y = this.collision_above(platform,delta.y);
+            this.collision_below(platform,body,delta.y);
+            this.collision_above(platform,body,delta.y);
         } else {
-            delta.y = this.collision_above(platform,delta.y);
-            delta.y = this.collision_below(platform,delta.y);
+            this.collision_above(platform,body,delta.y);
+            this.collision_below(platform,body,delta.y);
         }
         
     }
@@ -45,17 +50,22 @@ World.prototype.detect_collision = function(pos,delta) {
 }
 
 
-World.prototype.collision_below = function(rect,delta_y) {
+// collisions below successfully implemented!
+World.prototype.collision_below = function(rect,body,delta_y) {
 
-
-    
-
-
-    return delta_y;
+    // THIS WORKS!!!!
+    if ((body.y+body.h+delta_y > rect.y) && 
+        (body.y+delta_y < rect.y+rect.h) &&
+        (body.x+body.w > rect.x) && 
+        (body.x < rect.x+rect.w)) 
+    {
+        delta_y = rect.y - (body.y+body.h);
+    }
+    body.y += delta_y;
 }
 
 
-World.prototype.collision_above = function(rect,delta_y) {
+World.prototype.collision_above = function(rect,body,delta_y) {
 
 
 
@@ -83,6 +93,9 @@ World.prototype.update = function(elapsed_time) {
     for (var i = 0; i < this.platforms.length; ++i){
         this.platforms[i].update(elapsed_time);
     }
+
+
+
 }
 
 
