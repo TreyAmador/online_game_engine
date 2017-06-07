@@ -1,13 +1,17 @@
 // player is here for player purposes
 
 
-var SURFACE = Object.freeze({
-    NONE,
-    FLOOR,
-    LEFT,
-    RIGHT,
-    CEILING
-});
+
+
+function Surface() {
+    this.on_ground = false;
+    this.rebounded = true;
+    this.on_left_wall = false;
+    this.on_right_wall = false;
+    this.on_ceiling = false;
+    this.in_air = true;
+};
+
 
 
 var WALK_ACCEL_START = 0.005,
@@ -22,13 +26,18 @@ var FRICTION = 0.8,
     GRAVITY = 0.002;
 
 
+
 function Player(x,y,w,h) {
+
     this.body = new Rectangle(x,y,w,h);
     this.vel = new Vec2D(0,0);
     this.accel = new Vec2D(0,0);
     this.color = '#ff0000';
     this.on_ground = false;
     this.rebound = true;
+
+    this.surface = new Surface;
+
 }
 
 
@@ -91,10 +100,10 @@ Player.prototype.recover_jump = function() {
 
     // TODO implement conditional which 'dampens' jump
     //      when the button is released
-
     if (this.on_ground) {
         this.rebound = true;
     }
+
 }
 
 
@@ -144,7 +153,7 @@ Player.prototype.position_delta = function(elapsed_time) {
 Player.prototype.update = function(elapsed_time) {
 
     // prevents jumping while falling
-    if (this.vel.y > 0.1) {
+    if (this.vel.y > 0.01) {
         this.on_ground = false;
     }
 
