@@ -1,7 +1,6 @@
 // the world class, an imaginary wonder-world
 
 
-
 function World() {
     this.platforms = [];
 }
@@ -10,12 +9,10 @@ function World() {
 World.prototype.create_platforms = function(platforms) {
 
     // TODO make this more functional/modular
-    this.platforms.push(new Platform(200,400,50,50));
-    this.platforms.push(new Platform(300,400,250,50));
-    
-    this.platforms.push(new Platform(500,350,100,50));
-    this.platforms.push(new Platform(300,350,50,50));
-    
+    this.platforms.push(new Platform(150,300,50,50));
+    this.platforms.push(new Platform(500,300,50,50));
+    this.platforms.push(new Platform(200,400,300,50));
+
 }
 
 
@@ -32,8 +29,6 @@ World.prototype.detect_collision = function(body,delta) {
     for (var i = 0; i < len; ++i) {
         var platform = this.platforms[i].get_collision_rect();
 
-        // perhaps x and y should be reversed
-        // does this allow a 'jump up'?
         if (delta.x >= 0) {
             delta.x = this.collision_right(platform,body,delta.x);
             delta.x = this.collision_left(platform,body,delta.x);
@@ -60,10 +55,10 @@ World.prototype.detect_collision = function(body,delta) {
 World.prototype.collision_below = function(rect,player,delta_y) {
 
     var body = player.body;
-    if ((body.y+body.h+delta_y > rect.y) && 
+    if ((body.y+body.h+delta_y > rect.y) &&
         (body.y+delta_y < rect.y+rect.h) &&
-        (body.x+body.w > rect.x) && 
-        (body.x < rect.x+rect.w)) 
+        (body.x+body.w > rect.x) &&
+        (body.x < rect.x+rect.w))
     {
         delta_y = rect.y - (body.y + body.h);
         player.vel.y = 0;
@@ -98,16 +93,15 @@ World.prototype.collision_above = function(rect,player,delta_y) {
 World.prototype.collision_right = function(rect,player,delta_x) {
 
     var body = player.body;
-    if ((body.x+body.w+delta_x > rect.x) && 
-        (body.x < rect.x+rect.w) && 
+    if ((body.x+body.w+delta_x > rect.x) &&
+        (body.x+delta_x < rect.x) &&
         (body.y < rect.y+rect.h) &&
-        (body.y+body.h > rect.y)) 
+        (body.y+body.h > rect.y))
     {
         delta_x = rect.x-(body.x+body.w);
         player.vel.x = 0;
         player.accel.x = 0;
     }
-
 
     return delta_x;
 
@@ -118,7 +112,7 @@ World.prototype.collision_left = function(rect,player,delta_x) {
 
     var body = player.body;
     if ((body.x+delta_x < rect.x+rect.w) &&
-        (body.x+body.w > rect.x) &&
+        (body.x+body.w+delta_x > rect.x+rect.w) &&
         (body.y < rect.y+rect.h) &&
         (body.y+body.h > rect.y)) 
     {
