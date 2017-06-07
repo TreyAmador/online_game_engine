@@ -2,7 +2,6 @@
 
 
 
-
 var WALK_ACCEL_START = 0.005,
     WALK_ACCEL_STOP = 0.0,
     JUMP_ACCEL = 0.05,
@@ -118,15 +117,11 @@ Player.prototype.position_delta = function(elapsed_time) {
 //
 Player.prototype.update = function(elapsed_time) {
 
-    //var delta = new Pos2D(
-    //    this.calculate_delta_x(elapsed_time),
-    //    this.calculate_delta_y(elapsed_time));
-    
-    //world.detect_collision(this.body,delta);
-    
-    //this.body.x += delta.x;
-    //this.body.y += delta.y;
 
+    // prevents jumping while falling
+    if (this.vel.y > 0.1) {
+        this.on_ground = false;
+    }
 
     // this is a bit of a hack
     // remove ???
@@ -147,6 +142,5 @@ Player.prototype.draw = function(context) {
         this.body.x,this.body.y,
         this.body.w,this.body.h);
 }
-
 
 

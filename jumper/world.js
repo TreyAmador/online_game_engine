@@ -1,4 +1,4 @@
-
+// the world class, an imaginary wonder-world
 
 
 
@@ -10,10 +10,12 @@ function World() {
 World.prototype.create_platforms = function(platforms) {
 
     // TODO make this more functional/modular
-    this.platforms.push(new Platform(500,400,50,50));
     this.platforms.push(new Platform(200,400,50,50));
-    this.platforms.push(new Platform(300,400,100,50));
-
+    this.platforms.push(new Platform(300,400,250,50));
+    
+    this.platforms.push(new Platform(500,350,100,50));
+    this.platforms.push(new Platform(300,350,50,50));
+    
 }
 
 
@@ -63,54 +65,83 @@ World.prototype.collision_below = function(rect,player,delta_y) {
         (body.x+body.w > rect.x) && 
         (body.x < rect.x+rect.w)) 
     {
-        delta_y = rect.y - (body.y+body.h);
+        delta_y = rect.y - (body.y + body.h);
         player.vel.y = 0;
         player.accel.y = 0;
         player.on_ground = true;
     }
-    //body.y += delta_y;
-
-    console.log(player.on_ground);
-
+    
     return delta_y;
+
 }
 
 
-World.prototype.collision_above = function(rect,body,delta_y) {
+World.prototype.collision_above = function(rect,player,delta_y) {
 
-
-    //body.y += delta_y;
-
-
+    var body = player.body;
+    if ((body.y+delta_y < rect.y+rect.h) &&
+        (body.y+body.h+delta_y > rect.y) && 
+        (body.x+body.w > rect.x) &&
+        (body.x < rect.x+rect.w)) 
+    {
+        delta_y = (rect.y+rect.h) - body.y;
+        player.vel.y = 0;
+        player.accel.y = 0;
+        player.on_ground = false;
+    }
+    
     return delta_y;
+
 }
 
 
-World.prototype.collision_right = function(rect,body,delta_x) {
+World.prototype.collision_right = function(rect,player,delta_x) {
 
-
-    //body.x += delta_x*0.8;
+    var body = player.body;
+    if ((body.x+body.w+delta_x > rect.x) && 
+        (body.x < rect.x+rect.w) && 
+        (body.y < rect.y+rect.h) &&
+        (body.y+body.h > rect.y)) 
+    {
+        delta_x = rect.x-(body.x+body.w);
+        player.vel.x = 0;
+        player.accel.x = 0;
+    }
 
 
     return delta_x;
+
 }
 
 
-World.prototype.collision_left = function(rect,body,delta_x) {
+World.prototype.collision_left = function(rect,player,delta_x) {
 
-    //body.x += delta_x*0.8;
+    var body = player.body;
+    if ((body.x+delta_x < rect.x+rect.w) &&
+        (body.x+body.w > rect.x) &&
+        (body.y < rect.y+rect.h) &&
+        (body.y+body.h > rect.y)) 
+    {
+        delta_x = (rect.x+rect.w)-(body.x);
+        player.vel.x = 0;
+        player.accel.x = 0;
+    }
 
     return delta_x;
+
 }
 
 
 World.prototype.update = function(player,elapsed_time) {
+
     for (var i = 0; i < this.platforms.length; ++i){
         this.platforms[i].update(elapsed_time);
     }
+
     var delta = player.position_delta(elapsed_time);
     delta = this.detect_collision(player,delta);
     player.move_by_offset(delta);
+
 }
 
 
