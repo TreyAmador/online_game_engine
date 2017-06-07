@@ -15,6 +15,9 @@
 //      this could be a tiled game engine
 //          however, tiles will aggregate to be a platform
 //          and move in unison which gives illusion of soldity
+//              each 'tile' is 50 px, for example
+//              and one can divide to decide if red block is within
+//              indeces of the platforms of interest
 //
 //
 
@@ -26,7 +29,6 @@ var FRAME_RATE = MSEC_PER_SEC / FRAME_PER_SEC;
 
 var CANVAS_WIDTH = 720,
     CANVAS_HEIGHT = 540;
-
 
 
 function Core() {
@@ -96,9 +98,9 @@ Core.prototype.handle_input = function() {
 
 Core.prototype.update = function() {
 
-    this.world.update(FRAME_RATE);
+    this.world.update(this.player,FRAME_RATE);
 
-    this.player.update(FRAME_RATE,this.world);
+    this.player.update(FRAME_RATE);
 
     
 }

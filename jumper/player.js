@@ -9,10 +9,10 @@ var WALK_ACCEL_START = 0.005,
     JUMP_VEL = 0.7;
 
 var MAX_VEL_X = 0.5,
-    MAX_VEL_Y = 0.3;
+    MAX_VEL_Y = 0.7;
 
 var FRICTION = 0.8,
-    GRAVITY = 0.001;
+    GRAVITY = 0.002;
 
 
 function Player(x,y,w,h) {
@@ -22,6 +22,12 @@ function Player(x,y,w,h) {
     this.color = '#ff0000';
     this.on_ground = false;
     this.rebound = true;
+}
+
+
+Player.prototype.move_by_offset = function(delta) {
+    this.body.x += delta.x;
+    this.body.y += delta.y;
 }
 
 
@@ -97,34 +103,40 @@ Player.prototype.calculate_delta_y = function(elapsed_time) {
 }
 
 
-// TODO perhaps replace the 2D kinematics with 1D
-//      more efficient, which is good to do
-Player.prototype.update = function(elapsed_time,world) {
-
-    var delta = new Pos2D(
+Player.prototype.position_delta = function(elapsed_time) {
+    return new Pos2D(
         this.calculate_delta_x(elapsed_time),
         this.calculate_delta_y(elapsed_time));
-    //var pos = new Pos2D(this.body.x,this.body.y);
+}
+
+
+// TODO perhaps replace the 2D kinematics with 1D
+//      more efficient, which is good to do
+//
+// TODO pass the revised delta here then update 
+//      position passed here
+//
+Player.prototype.update = function(elapsed_time) {
+
+    //var delta = new Pos2D(
+    //    this.calculate_delta_x(elapsed_time),
+    //    this.calculate_delta_y(elapsed_time));
     
+    //world.detect_collision(this.body,delta);
     
-
-    world.detect_collision(this.body,delta);
-
-
-    this.body.x += delta.x;
+    //this.body.x += delta.x;
     //this.body.y += delta.y;
 
 
-    // TODO remove this hack ..!
-    if (this.body.y >= 400) {
-        this.body.y = 400;
-        this.on_ground = true;
+    // this is a bit of a hack
+    // remove ???
+    if (this.body.y > 800) {
+        this.body.x = 300;
+        this.body.y = -200;
         this.vel.y = 0;
-        this.accel.y = 0;
-    } else {
+        this.vel.x = 0;
         this.on_ground = false;
     }
-
 
 }
 

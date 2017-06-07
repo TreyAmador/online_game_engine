@@ -30,72 +30,87 @@ World.prototype.detect_collision = function(body,delta) {
     for (var i = 0; i < len; ++i) {
         var platform = this.platforms[i].get_collision_rect();
 
+        // perhaps x and y should be reversed
+        // does this allow a 'jump up'?
         if (delta.x >= 0) {
-            this.collision_right(platform,delta.x);
-            this.collision_left(platform,delta.x);
+            delta.x = this.collision_right(platform,body,delta.x);
+            delta.x = this.collision_left(platform,body,delta.x);
         } else {
-            this.collision_left(platform,delta.x);
-            this.collision_right(platform,delta.x);
+            delta.x = this.collision_left(platform,body,delta.x);
+            delta.x = this.collision_right(platform,body,delta.x);
         }
         if (delta.y >= 0) {
-            this.collision_below(platform,body,delta.y);
-            this.collision_above(platform,body,delta.y);
+            delta.y = this.collision_below(platform,body,delta.y);
+            delta.y = this.collision_above(platform,body,delta.y);
         } else {
-            this.collision_above(platform,body,delta.y);
-            this.collision_below(platform,body,delta.y);
+            delta.y = this.collision_above(platform,body,delta.y);
+            delta.y = this.collision_below(platform,body,delta.y);
         }
         
     }
+
+    return delta;
 
 }
 
 
 // collisions below successfully implemented!
-World.prototype.collision_below = function(rect,body,delta_y) {
+World.prototype.collision_below = function(rect,player,delta_y) {
 
-    // THIS WORKS!!!!
+    var body = player.body;
     if ((body.y+body.h+delta_y > rect.y) && 
         (body.y+delta_y < rect.y+rect.h) &&
         (body.x+body.w > rect.x) && 
         (body.x < rect.x+rect.w)) 
     {
         delta_y = rect.y - (body.y+body.h);
+        player.vel.y = 0;
+        player.accel.y = 0;
+        player.on_ground = true;
     }
-    body.y += delta_y;
+    //body.y += delta_y;
+
+    console.log(player.on_ground);
+
+    return delta_y;
 }
 
 
 World.prototype.collision_above = function(rect,body,delta_y) {
 
 
-
+    //body.y += delta_y;
 
 
     return delta_y;
 }
 
 
-World.prototype.collision_right = function(rect,delta_x) {
+World.prototype.collision_right = function(rect,body,delta_x) {
+
+
+    //body.x += delta_x*0.8;
 
 
     return delta_x;
 }
 
 
-World.prototype.collision_left = function(rect,delta_x) {
+World.prototype.collision_left = function(rect,body,delta_x) {
 
+    //body.x += delta_x*0.8;
 
     return delta_x;
 }
 
 
-World.prototype.update = function(elapsed_time) {
+World.prototype.update = function(player,elapsed_time) {
     for (var i = 0; i < this.platforms.length; ++i){
         this.platforms[i].update(elapsed_time);
     }
-
-
-
+    var delta = player.position_delta(elapsed_time);
+    delta = this.detect_collision(player,delta);
+    player.move_by_offset(delta);
 }
 
 
