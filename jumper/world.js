@@ -11,7 +11,7 @@ World.prototype.create_platforms = function(platforms) {
     // TODO make this more functional/modular
     this.platforms.push(new Platform(200,450,300,50));
     this.platforms.push(new Platform(50,100,50,300));
-    this.platforms.push(new Platform(500,100,50,100));
+    this.platforms.push(new Platform(500,200,50,100));
 
 }
 
@@ -64,7 +64,6 @@ World.prototype.collision_below = function(rect,player,delta_y) {
         player.vel.y = 0;
         player.accel.y = 0;
         player.surface.on_ground = true;
-
     }
     
     return delta_y;
@@ -125,7 +124,7 @@ World.prototype.collision_left = function(rect,player,delta_x) {
         player.vel.x = 0;
         player.accel.x = 0;
     } else {
-        player.on_left_wall = false;
+        player.surface.on_left_wall = false;
     }
 
     return delta_x;

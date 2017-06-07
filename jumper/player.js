@@ -2,11 +2,10 @@
 
 
 
-
 function Surface() {
     
     this.on_ground = false;
-    this.rebounded = true;
+    this.ground_rebound = true;
 
     this.on_left_wall = false;
     this.left_wall_rebound = true;
@@ -93,14 +92,14 @@ Player.prototype.jump = function() {
     if (this.surface.on_ground && this.surface.ground_rebound) {
         this.initiate_jump(this.vel.x,-JUMP_VEL);
     } else {
-        if (this.surface.on_right_wall && this.surface.right_wall_rebound) {
-            this.initiate_jump(-WALL_JUMP_VEL,-JUMP_VEL);
-        }
         if (this.surface.on_left_wall && this.surface.left_wall_rebound) {
             this.initiate_jump(WALL_JUMP_VEL,-JUMP_VEL);
         }
+        if (this.surface.on_right_wall && this.surface.right_wall_rebound) {
+            this.initiate_jump(-WALL_JUMP_VEL,-JUMP_VEL);
+        }
     }
-    
+
 }
 
 
@@ -136,21 +135,6 @@ Player.prototype.initiate_jump = function(vel_x,vel_y) {
         this.surface.left_wall_rebound =
         this.surface.on_right_wall = 
         this.surface.right_wall_rebound = false;
-
-}
-
-
-Player.prototype.ground_jump = function() {
-
-}
-
-
-Player.prototype.left_wall_jump = function() {
-
-}
-
-
-Player.prototype.right_wall_jump = function() {
 
 }
 
