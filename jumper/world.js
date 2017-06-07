@@ -9,8 +9,8 @@ function World() {
 World.prototype.create_platforms = function(platforms) {
 
     // TODO make this more functional/modular
-    this.platforms.push(new Platform(200,400,300,50));
-    this.platforms.push(new Platform(50,200,50,100));
+    this.platforms.push(new Platform(200,450,300,50));
+    this.platforms.push(new Platform(50,100,50,300));
     this.platforms.push(new Platform(500,100,50,100));
 
 }
@@ -63,7 +63,8 @@ World.prototype.collision_below = function(rect,player,delta_y) {
         delta_y = rect.y - (body.y + body.h);
         player.vel.y = 0;
         player.accel.y = 0;
-        player.on_ground = true;
+        player.surface.on_ground = true;
+
     }
     
     return delta_y;
@@ -82,7 +83,7 @@ World.prototype.collision_above = function(rect,player,delta_y) {
         delta_y = (rect.y+rect.h) - body.y;
         player.vel.y = 0;
         player.accel.y = 0;
-        player.on_ground = false;
+        player.surface.on_ground = false;
     }
     
     return delta_y;
@@ -99,8 +100,11 @@ World.prototype.collision_right = function(rect,player,delta_x) {
         (body.y+body.h > rect.y))
     {
         delta_x = rect.x-(body.x+body.w);
+        player.surface.on_right_wall = true;
         player.vel.x = 0;
         player.accel.x = 0;
+    } else {
+        player.surface.on_right_wall = false;
     }
 
     return delta_x;
@@ -117,8 +121,11 @@ World.prototype.collision_left = function(rect,player,delta_x) {
         (body.y+body.h > rect.y)) 
     {
         delta_x = (rect.x+rect.w)-(body.x);
+        player.surface.on_left_wall = true;
         player.vel.x = 0;
         player.accel.x = 0;
+    } else {
+        player.on_left_wall = false;
     }
 
     return delta_x;

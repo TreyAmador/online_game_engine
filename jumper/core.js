@@ -92,25 +92,18 @@ Core.prototype.handle_input = function() {
         this.player.recover_jump();
     }
 
-
 }
 
 
 Core.prototype.update = function() {
-
     this.world.update(this.player,FRAME_RATE);
-
     this.player.update(FRAME_RATE);
-
-    
 }
 
 
 Core.prototype.draw = function() {
     this.player.draw(this.context);
-
     this.world.draw(this.context);
-
 }
 
 
