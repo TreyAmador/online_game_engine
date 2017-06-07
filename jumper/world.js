@@ -9,9 +9,9 @@ function World() {
 World.prototype.create_platforms = function(platforms) {
 
     // TODO make this more functional/modular
-    this.platforms.push(new Platform(150,300,50,50));
-    this.platforms.push(new Platform(500,300,50,50));
-    this.platforms.push(new Platform(200,400,300,50));
+    //this.platforms.push(new Platform(150,300,50,50));
+    //this.platforms.push(new Platform(500,300,50,50));
+    this.platforms.push(new Platform(0,400,800,50));
 
 }
 
@@ -99,8 +99,8 @@ World.prototype.collision_right = function(rect,player,delta_x) {
         (body.y+body.h > rect.y))
     {
         delta_x = rect.x-(body.x+body.w);
-        player.vel.x = 0;
-        player.accel.x = 0;
+        //player.vel.x = 0;
+        //player.accel.x = 0;
     }
 
     return delta_x;
@@ -117,8 +117,8 @@ World.prototype.collision_left = function(rect,player,delta_x) {
         (body.y+body.h > rect.y)) 
     {
         delta_x = (rect.x+rect.w)-(body.x);
-        player.vel.x = 0;
-        player.accel.x = 0;
+        //player.vel.x = 0;
+        //player.accel.x = 0;
     }
 
     return delta_x;

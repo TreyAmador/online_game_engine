@@ -1,16 +1,24 @@
 // player is here for player purposes
 
 
+var SURFACE = Object.freeze({
+    NONE,
+    FLOOR,
+    LEFT,
+    RIGHT,
+    CEILING
+});
+
 
 var WALK_ACCEL_START = 0.005,
     WALK_ACCEL_STOP = 0.0,
-    JUMP_ACCEL = 0.05,
-    JUMP_VEL = 0.7;
+    JUMP_VEL = 0.8
+    JUMP_ACCEL_START = 0.002;
 
-var MAX_VEL_X = 0.5,
-    MAX_VEL_Y = 0.7;
+var MAX_VEL_X = 0.8;
 
 var FRICTION = 0.8,
+    WIND_RESISTANCE = 0.90,
     GRAVITY = 0.002;
 
 
@@ -41,12 +49,20 @@ Player.prototype.move_down = function() {
 
 
 Player.prototype.move_left = function() {
-    this.accel.x = -WALK_ACCEL_START;
+    if (this.on_ground) {
+        this.accel.x = -WALK_ACCEL_START;
+    } else {
+        this.accel.x = -JUMP_ACCEL_START;
+    }
 }
 
 
 Player.prototype.move_right = function() {
-    this.accel.x = WALK_ACCEL_START;
+    if (this.on_ground) {
+        this.accel.x = WALK_ACCEL_START;
+    } else {
+        this.accel.x = JUMP_ACCEL_START;
+    }
 }
 
 
@@ -84,14 +100,24 @@ Player.prototype.recover_jump = function() {
 
 
 Player.prototype.calculate_delta_x = function(elapsed_time) {
+
     this.vel.x += Physics.velocity_delta(this.accel.x,elapsed_time);
-    this.vel.x = Physics.friction(FRICTION,this.vel.x);
+
+    if (this.on_ground) {
+        this.vel.x = Physics.friction(FRICTION,this.vel.x);
+    } else {
+        this.vel.x = Physics.wind_resistance(WIND_RESISTANCE,this.vel.x);
+    }
+    
     if (Math.abs(this.vel.x) > MAX_VEL_X) {
         this.vel.x = Math.sign(this.vel.x)*MAX_VEL_X;
         this.accel.x = 0.0;
     }
+
     var delta_x = Physics.kinematics_delta(this.accel.x,this.vel.x,elapsed_time);
+
     return delta_x;
+
 }
 
 
@@ -116,7 +142,6 @@ Player.prototype.position_delta = function(elapsed_time) {
 //      position passed here
 //
 Player.prototype.update = function(elapsed_time) {
-
 
     // prevents jumping while falling
     if (this.vel.y > 0.1) {

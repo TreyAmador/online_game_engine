@@ -110,6 +110,11 @@ var Physics = {
     },
 
 
+    wind_resistance: function(r,v) {
+        return r*v;
+    },
+
+
     gravity_delta: function(g,v,t) {
         return (g/2)*t*t + v*t;
     },
