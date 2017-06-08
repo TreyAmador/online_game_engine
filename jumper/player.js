@@ -43,6 +43,11 @@ function Player(x,y,w,h) {
 }
 
 
+Player.prototype.init_frame = function() {
+    this.surface.on_left_wall = this.surface.on_right_wall = false;
+}
+
+
 Player.prototype.move_by_offset = function(delta) {
     this.body.x += delta.x;
     this.body.y += delta.y;
@@ -129,12 +134,12 @@ Player.prototype.initiate_jump = function(vel_x,vel_y) {
     this.vel.x = vel_x;
     this.vel.y = vel_y;
 
-    this.surface.on_ground = 
-        this.surface.ground_rebound = 
-        this.surface.on_left_wall = 
-        this.surface.left_wall_rebound =
-        this.surface.on_right_wall = 
-        this.surface.right_wall_rebound = false;
+    this.surface.on_ground = false;
+    this.surface.ground_rebound = false;
+    this.surface.on_left_wall = false;
+    this.surface.left_wall_rebound = false;
+    this.surface.on_right_wall = false;
+    this.surface.right_wall_rebound = false;
 
 }
 
@@ -184,9 +189,9 @@ Player.prototype.position_delta = function(elapsed_time) {
 Player.prototype.update = function(elapsed_time) {
 
     // prevents jumping while falling
-    //if (this.vel.y > 0.01) {
-    //    this.surface.on_ground = false;
-    //}
+    if (this.vel.y > 0.01) {
+        this.surface.on_ground = false;
+    }
 
     // this is a bit of a hack
     // remove ???
@@ -196,9 +201,16 @@ Player.prototype.update = function(elapsed_time) {
         this.vel.y = 0;
         this.vel.x = 0;
         this.surface.on_ground = false;
-        this.surface.on_left_wall = false;
-        this.surface.on_right_wall = false;
     }
+
+    //console.log('update        ',this.surface.on_left_wall);
+
+    //console.log('update',this.surface.on_right_wall);
+
+
+    //this.surface.on_left_wall = 
+        //this.surface.on_right_wall = false;
+
 
 }
 

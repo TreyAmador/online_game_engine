@@ -9,9 +9,9 @@ function World() {
 World.prototype.create_platforms = function(platforms) {
 
     // TODO make this more functional/modular
-    this.platforms.push(new Platform(200,450,300,50));
+    this.platforms.push(new Platform(250,450,200,50));
     this.platforms.push(new Platform(50,100,50,300));
-    this.platforms.push(new Platform(500,200,50,100));
+    this.platforms.push(new Platform(500,150,50,150));
 
 }
 
@@ -20,8 +20,7 @@ World.prototype.create_platforms = function(platforms) {
 //      first based if on ground or on wall
 //          if on ground, test x then y
 //          if on wall, test y then x
-
-
+//
 // TODO pass in player so vars for on_ground and vel.y can be set...
 World.prototype.detect_collision = function(body,delta) {
 
@@ -83,6 +82,8 @@ World.prototype.collision_above = function(rect,player,delta_y) {
         player.vel.y = 0;
         player.accel.y = 0;
         player.surface.on_ground = false;
+        player.surface.on_left_wall = false;
+        player.surface.on_right_wall = false;
     }
     
     return delta_y;
@@ -102,8 +103,6 @@ World.prototype.collision_right = function(rect,player,delta_x) {
         player.surface.on_right_wall = true;
         player.vel.x = 0;
         player.accel.x = 0;
-    } else {
-        player.surface.on_right_wall = false;
     }
 
     return delta_x;
@@ -123,8 +122,6 @@ World.prototype.collision_left = function(rect,player,delta_x) {
         player.surface.on_left_wall = true;
         player.vel.x = 0;
         player.accel.x = 0;
-    } else {
-        player.surface.on_left_wall = false;
     }
 
     return delta_x;

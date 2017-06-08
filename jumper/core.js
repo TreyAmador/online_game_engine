@@ -96,6 +96,7 @@ Core.prototype.handle_input = function() {
 
 
 Core.prototype.update = function() {
+    this.player.init_frame();
     this.world.update(this.player,FRAME_RATE);
     this.player.update(FRAME_RATE);
 }
