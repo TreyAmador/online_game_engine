@@ -1,40 +1,46 @@
 // the world class, an imaginary wonder-world
 
 
+const LEVEL_PREFIX = 'world-';
+
+
 function World() {
+    this.current_level = document.getElementById('world-1');
     this.platforms = [];
 }
 
 
-World.prototype.load_world = function() {
-
-    var platforms = document.getElementsByClassName('platform');
-    for (var i = 0; i < platforms.length; ++i) {
-        var coords_str = platforms[i].innerHTML;
-        var coordinates = coords_str.split(',');
-        var coords_int = [];
-        for (var j = 0; j < coordinates.length; ++j) {
-            coords_int.push(parseInt(coordinates[j]));
-        }
-        this.platforms.push(new Platform(
-            coords_int[0],coords_int[1],
-            coords_int[2],coords_int[3]));
-        platforms[i].innerHTML = '';
+World.prototype.load_level = function() {
+    this.platforms = [];
+    //var p_plt = this.current_level.firstChild;
+    var p_plt = this.current_level.firstElementChild;
+    while (p_plt != null) {
+        this.add_platform(p_plt);
+        p_plt = p_plt.nextElementSibling;
     }
+}
 
+
+World.prototype.add_platform = function(platform_node) {
+    var coordinates = platform_node.innerHTML.split(','); 
+    coordinates.forEach(function(elem) {
+        parseInt(elem);
+    });
+    this.platforms.push(new Platform(
+        coordinates[0],coordinates[1],
+        coordinates[2],coordinates[3]
+    ));
+}
+
+
+World.prototype.init_first_world = function() {
+    return document.getElementById('world-1');
 }
 
 
 World.prototype.create_platforms = function(platforms) {
 
-    // TODO make this more functional/modular
-    //this.platforms.push(new Platform(250,450,200,50));
-    //this.platforms.push(new Platform(50,100,50,300));
-    //this.platforms.push(new Platform(500,150,50,150));
-
-
-
-
+    
 
 }
 
