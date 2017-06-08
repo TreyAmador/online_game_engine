@@ -55,6 +55,8 @@ Core.prototype.init_entities = function() {
 
     this.world = new World();
 
+    this.world.load_world();
+
     // TODO something should go in here to layout map
     //      perhaps array of platforms?
     this.world.create_platforms([]);

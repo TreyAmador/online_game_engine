@@ -26,7 +26,8 @@ var WALK_ACCEL_START = 0.005,
     WALL_JUMP_VEL = 0.5,
     JUMP_ACCEL_START = 0.002;
 
-var MAX_VEL_X = 0.8;
+var MAX_VEL_X = 0.8,
+    MAX_VEL_Y = 1.5;
 
 var FRICTION = 0.8,
     WIND_RESISTANCE = 0.90,
@@ -44,7 +45,9 @@ function Player(x,y,w,h) {
 
 
 Player.prototype.init_frame = function() {
-    this.surface.on_left_wall = this.surface.on_right_wall = false;
+    this.surface.on_ground = 
+        this.surface.on_left_wall = 
+        this.surface.on_right_wall = false;
 }
 
 
@@ -113,15 +116,12 @@ Player.prototype.recover_jump = function() {
 
     // TODO implement conditional which 'dampens' jump
     //      when the button is released
-
     if (this.surface.on_ground) {
         this.surface.ground_rebound = true;
     }
-
     if (this.surface.on_left_wall) {
         this.surface.left_wall_rebound = true;
     }
-
     if (this.surface.on_right_wall) {
         this.surface.right_wall_rebound = true;
     }
@@ -134,12 +134,12 @@ Player.prototype.initiate_jump = function(vel_x,vel_y) {
     this.vel.x = vel_x;
     this.vel.y = vel_y;
 
-    this.surface.on_ground = false;
-    this.surface.ground_rebound = false;
-    this.surface.on_left_wall = false;
-    this.surface.left_wall_rebound = false;
-    this.surface.on_right_wall = false;
-    this.surface.right_wall_rebound = false;
+    this.surface.on_ground = 
+        this.surface.ground_rebound = 
+        this.surface.on_left_wall = 
+        this.surface.left_wall_rebound = 
+        this.surface.on_right_wall = 
+        this.surface.right_wall_rebound = false;
 
 }
 
@@ -167,9 +167,12 @@ Player.prototype.calculate_delta_x = function(elapsed_time) {
 
 
 Player.prototype.calculate_delta_y = function(elapsed_time) {
+
     this.vel.y += Physics.velocity_delta(GRAVITY,elapsed_time);
     var delta_y = Physics.gravity_delta(GRAVITY,this.vel.y,elapsed_time);
+
     return delta_y;
+
 }
 
 
@@ -182,19 +185,11 @@ Player.prototype.position_delta = function(elapsed_time) {
 
 // TODO perhaps replace the 2D kinematics with 1D
 //      more efficient, which is good to do
-//
 // TODO pass the revised delta here then update 
 //      position passed here
-//
 Player.prototype.update = function(elapsed_time) {
 
-    // prevents jumping while falling
-    if (this.vel.y > 0.01) {
-        this.surface.on_ground = false;
-    }
-
     // this is a bit of a hack
-    // remove ???
     if (this.body.y > 800) {
         this.body.x = 300;
         this.body.y = -200;
@@ -203,14 +198,10 @@ Player.prototype.update = function(elapsed_time) {
         this.surface.on_ground = false;
     }
 
-    //console.log('update        ',this.surface.on_left_wall);
-
-    //console.log('update',this.surface.on_right_wall);
-
-
-    //this.surface.on_left_wall = 
-        //this.surface.on_right_wall = false;
-
+    if (this.vel.y > MAX_VEL_Y) {
+        this.vel.y = MAX_VEL_Y;
+        this.accel.y = 0;
+    }
 
 }
 

@@ -6,12 +6,35 @@ function World() {
 }
 
 
+World.prototype.load_world = function() {
+
+    var platforms = document.getElementsByClassName('platform');
+    for (var i = 0; i < platforms.length; ++i) {
+        var coords_str = platforms[i].innerHTML;
+        var coordinates = coords_str.split(',');
+        var coords_int = [];
+        for (var j = 0; j < coordinates.length; ++j) {
+            coords_int.push(parseInt(coordinates[j]));
+        }
+        this.platforms.push(new Platform(
+            coords_int[0],coords_int[1],
+            coords_int[2],coords_int[3]));
+        platforms[i].innerHTML = '';
+    }
+
+}
+
+
 World.prototype.create_platforms = function(platforms) {
 
     // TODO make this more functional/modular
-    this.platforms.push(new Platform(250,450,200,50));
-    this.platforms.push(new Platform(50,100,50,300));
-    this.platforms.push(new Platform(500,150,50,150));
+    //this.platforms.push(new Platform(250,450,200,50));
+    //this.platforms.push(new Platform(50,100,50,300));
+    //this.platforms.push(new Platform(500,150,50,150));
+
+
+
+
 
 }
 
