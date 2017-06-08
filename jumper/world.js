@@ -1,6 +1,7 @@
 // the world class, an imaginary wonder-world
 
 
+
 const FIRST_LEVEL = 'world-1';
 const WORLD_WRAPPER_ID = 'worlds';
 const LEVEL_PREFIX = 'world-';
@@ -56,7 +57,7 @@ World.prototype.add_platform = function(node) {
 }
 
 
-// TODO perhaps determine which collisions to test  
+// TODO perhaps determine which collisions to test
 //      first based if on ground or on wall
 //          if on ground, test x then y
 //          if on wall, test y then x
