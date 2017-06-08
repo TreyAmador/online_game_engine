@@ -1,18 +1,41 @@
 // the world class, an imaginary wonder-world
 
 
+const FIRST_LEVEL = 'world-1';
+const WORLD_WRAPPER_ID = 'worlds';
 const LEVEL_PREFIX = 'world-';
 
 
 function World() {
-    this.current_level = document.getElementById('world-1');
     this.platforms = [];
 }
 
 
+World.prototype.init = function() {
+    this.set_level_html_invisible();
+    this.current_level = document.getElementById(FIRST_LEVEL);
+}
+
+
+World.prototype.set_level_html_invisible = function() {
+    var p_lvl = document.getElementById(WORLD_WRAPPER_ID).firstElementChild;
+    while (p_lvl != null) {
+        p_lvl.style.display = 'none';
+        p_lvl = p_lvl.nextElementSibling;
+    }
+}
+
+
+World.prototype.next_level = function() {
+    if (this.current_level.nextElementSibling != null) {
+        this.current_level = this.current_level.nextElementSibling;
+    }
+}
+
+
+
 World.prototype.load_level = function() {
     this.platforms = [];
-    //var p_plt = this.current_level.firstChild;
     var p_plt = this.current_level.firstElementChild;
     while (p_plt != null) {
         this.add_platform(p_plt);
@@ -21,27 +44,15 @@ World.prototype.load_level = function() {
 }
 
 
-World.prototype.add_platform = function(platform_node) {
-    var coordinates = platform_node.innerHTML.split(','); 
-    coordinates.forEach(function(elem) {
-        parseInt(elem);
-    });
+World.prototype.add_platform = function(node) {
+    var coordinates = node.innerHTML.split(',')
+        .map(function(x) {
+            return parseInt(x);
+        });
     this.platforms.push(new Platform(
         coordinates[0],coordinates[1],
         coordinates[2],coordinates[3]
     ));
-}
-
-
-World.prototype.init_first_world = function() {
-    return document.getElementById('world-1');
-}
-
-
-World.prototype.create_platforms = function(platforms) {
-
-    
-
 }
 
 
