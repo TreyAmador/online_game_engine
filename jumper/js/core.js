@@ -59,7 +59,14 @@ Core.prototype.init_entities = function() {
     this.world.init();
     this.world.load_level();
 
-    this.player = new Player(400,-200,50,50);
+    this.player = new Player(320,320,40,40);
+
+    // remove this ?
+    this.particle = new Kaleidoscope(
+        this.player.body.x,this.player.body.y,
+        this.player.body.w,this.player.body.h);
+    this.particle.set_num_particles(50);
+
 }
 
 
@@ -99,12 +106,20 @@ Core.prototype.update = function() {
     this.player.init_frame();
     this.world.update(this.player,FRAME_RATE);
     this.player.update(FRAME_RATE);
+
+    // remove this ?
+    this.particle.update(FRAME_RATE);
+
 }
 
 
 Core.prototype.draw = function() {
     this.player.draw(this.context);
     this.world.draw(this.context);
+
+    // remove this ?
+    this.particle.draw(this.context);
+
 }
 
 

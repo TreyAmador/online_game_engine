@@ -42,6 +42,10 @@ function Player(x,y,w,h) {
     this.accel = new Vec2D(0,0);
     this.color = '#ff0000';
     this.surface = new Surface;
+
+
+    this.kaleidoscope = false;
+
 }
 
 
@@ -197,7 +201,7 @@ Player.prototype.update = function(elapsed_time) {
 
     // this is a bit of a hack
     if (this.body.y > 800) {
-        this.body.x = 300;
+        this.body.x = 320;
         this.body.y = -200;
         this.vel.y = 0;
         this.vel.x = 0;
