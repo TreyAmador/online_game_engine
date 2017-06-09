@@ -34,6 +34,8 @@ var FRICTION = 0.8,
     WIND_RESISTANCE = 0.90,
     GRAVITY = 0.002;
 
+var NUMBER_PARTICLES = 50;
+
 
 
 function Player(x,y,w,h) {
@@ -44,7 +46,8 @@ function Player(x,y,w,h) {
     this.surface = new Surface;
 
 
-    this.kaleidoscope = false;
+    //this.kaleidoscope = false;
+    this.init_particle(NUMBER_PARTICLES);
 
 }
 
@@ -53,6 +56,14 @@ Player.prototype.init_frame = function() {
     this.surface.on_ground = 
         this.surface.on_left_wall = 
         this.surface.on_right_wall = false;
+}
+
+
+Player.prototype.init_particle = function(ptcs) {
+    this.particle = new Kaleidoscope(
+        this.body.x,this.body.y,
+        this.body.w,this.body.h);
+    this.particle.set_num_particles(ptcs);
 }
 
 
@@ -213,14 +224,24 @@ Player.prototype.update = function(elapsed_time) {
         this.accel.y = 0;
     }
 
+
+
+    // particle update
+    this.particle.update(elapsed_time);
+
 }
 
 
 Player.prototype.draw = function(context) {
+
     context.fillStyle = this.color;
     context.fillRect(
         this.body.x,this.body.y,
         this.body.w,this.body.h);
+
+    
+    // particle draw    
+    this.particle.draw(context);
 }
 
 

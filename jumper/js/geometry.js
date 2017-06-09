@@ -122,3 +122,26 @@ var Physics = {
 
 };
 
+
+
+
+var Calculator = {
+
+
+    random_range: function(floor,ceiling) {
+        return floor + Math.random()*(ceiling-floor);
+    },
+
+
+    random_magnitude: function(magnitude) {
+        var radians = Math.random() * 2 * Math.PI;
+        var x = magnitude * Math.cos(radians);
+        var y = magnitude * Math.sin(radians);
+        return new Vec2D(x,y);
+    },
+
+
+};
+
+
+

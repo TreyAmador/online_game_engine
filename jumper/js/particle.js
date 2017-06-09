@@ -23,9 +23,9 @@ KaleidoscopeParticle.prototype.set_transparency = function(transparency) {
 }
 
 
-KaleidoscopeParticle.prototype.set_velocity = function(x,y) {
-    this.vel.x = x;
-    this.vel.y = y;
+KaleidoscopeParticle.prototype.set_velocity = function(vel) {
+    this.vel.x = vel.x;
+    this.vel.y = vel.y;
 }
 
 
@@ -36,10 +36,13 @@ KaleidoscopeParticle.prototype.update = function(elapsed_time) {
 
 
 KaleidoscopeParticle.prototype.draw = function(context) {
-    context.fillStyle = '#ff00ff';
+    //context.fillStyle = '#ff00ff';
+    //context.fillSytle = 'rgba(255,0,0,0.9)';
+    context.globalAlpha = 0.5;
     context.fillRect(
         this.particle.x,this.particle.y,
         this.particle.w,this.particle.h);
+    context.globalAlpha = 1.0;
 }
 
 
@@ -72,13 +75,13 @@ Kaleidoscope.prototype.update = function(elapsed_time) {
             this.centroid.x,this.centroid.y,
             this.centroid.w,this.centroid.h);
         kaleidoscope_particle.set_velocity(
-            Math.random()-0.5,
-            Math.random()-0.5);
+            Calculator.random_magnitude(0.1));
         this.particles.push(kaleidoscope_particle);
     }
 
     for (var i = 0; i < this.particles.length; ++i) {
         this.particles[i].update(elapsed_time);
+        
     }
 
 }
