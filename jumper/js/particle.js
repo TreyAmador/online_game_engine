@@ -5,6 +5,17 @@
 
 
 
+var COLOR_FUNCTION = [
+    '#ff0000',
+    '#00ff00',
+    '#0000ff',
+    '#ff00ff',
+    '#ffff00',
+    '#00ffff',
+];
+
+
+
 function KaleidoscopeParticle(x,y,w,h,) {
     this.particle = new Rectangle(x,y,w,h);
     this.vel = new Vec2D(0,0);
@@ -36,9 +47,8 @@ KaleidoscopeParticle.prototype.update = function(elapsed_time) {
 
 
 KaleidoscopeParticle.prototype.draw = function(context) {
-    //context.fillStyle = '#ff00ff';
-    //context.fillSytle = 'rgba(255,0,0,0.9)';
     context.globalAlpha = 0.5;
+    context.fillStyle = this.color;
     context.fillRect(
         this.particle.x,this.particle.y,
         this.particle.w,this.particle.h);
@@ -76,23 +86,22 @@ Kaleidoscope.prototype.update = function(elapsed_time) {
             this.centroid.w,this.centroid.h);
         kaleidoscope_particle.set_velocity(
             Calculator.random_magnitude(0.1));
+        var i = Math.floor(Math.random()*100)%COLOR_FUNCTION.length;
+        kaleidoscope_particle.set_color(COLOR_FUNCTION[i]);
         this.particles.push(kaleidoscope_particle);
     }
 
     for (var i = 0; i < this.particles.length; ++i) {
         this.particles[i].update(elapsed_time);
-        
     }
 
 }
 
 
 Kaleidoscope.prototype.draw = function(context) {
-
     for (var i = 0; i < this.particles.length; ++i) {
         this.particles[i].draw(context);
     }
-
 }
 
 

@@ -47,7 +47,7 @@ function Player(x,y,w,h) {
 
 
     //this.kaleidoscope = false;
-    this.init_particle(NUMBER_PARTICLES);
+    //this.init_particle(NUMBER_PARTICLES);
 
 }
 
@@ -60,10 +60,12 @@ Player.prototype.init_frame = function() {
 
 
 Player.prototype.init_particle = function(ptcs) {
+
     this.particle = new Kaleidoscope(
         this.body.x,this.body.y,
         this.body.w,this.body.h);
     this.particle.set_num_particles(ptcs);
+
 }
 
 
@@ -224,10 +226,8 @@ Player.prototype.update = function(elapsed_time) {
         this.accel.y = 0;
     }
 
-
-
     // particle update
-    this.particle.update(elapsed_time);
+    //this.particle.update(elapsed_time);
 
 }
 
@@ -239,9 +239,9 @@ Player.prototype.draw = function(context) {
         this.body.x,this.body.y,
         this.body.w,this.body.h);
 
-    
     // particle draw    
-    this.particle.draw(context);
+    //this.particle.draw(context);
+
 }
 
 

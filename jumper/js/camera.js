@@ -9,6 +9,8 @@ function Camera() {
 
 Camera.prototype.capture = function(context) {
 
+    context.draw
+
 }
 
 

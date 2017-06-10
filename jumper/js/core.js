@@ -59,7 +59,7 @@ Core.prototype.init_entities = function() {
     this.world.init();
     this.world.load_level();
 
-    this.player = new Player(320,360,40,40);
+    this.player = new Player(320,400,40,40);
 
 }
 
