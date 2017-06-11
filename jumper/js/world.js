@@ -210,6 +210,11 @@ World.prototype.collision_left = function(rect,player,delta_x) {
 }
 
 
+World.prototype.get_platforms = function() {
+    return this.platforms;
+}
+
+
 World.prototype.update = function(player,elapsed_time) {
 
     for (var i = 0; i < this.platforms.length; ++i){

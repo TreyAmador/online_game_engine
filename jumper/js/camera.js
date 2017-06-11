@@ -8,7 +8,7 @@ function Camera(x,y,w,h) {
 }
 
 
-Capture.prototype.center_camera = function(elapsed_time,player) {
+Camera.prototype.center_camera = function(elapsed_time,player) {
 
     var plyr_x = player.body.x + player.body.w/2;
     var plyr_y = player.body.y + player.body.h/2;
@@ -25,6 +25,7 @@ Capture.prototype.center_camera = function(elapsed_time,player) {
 Camera.prototype.update = function(elapsed_time,player) {
 
     if (this.centered) {
+        
         this.center_camera(elapsed_time,player);
     }
 
@@ -41,6 +42,18 @@ Camera.prototype.capture = function(context,body) {
 
     body.draw(context,x,y);
 
+}
+
+
+Camera.prototype.capture_world = function(context,world) {
+    var platforms = world.get_platforms();
+    var len = platforms.length;
+    for (var i = 0; i < len; ++i) {
+        var pos = platforms[i].get_pos();
+        var x = this.view.x + pos.x;
+        var y = this.view.y + pos.y;
+        platforms[i].draw(context,x,y);
+    }
 }
 
 
