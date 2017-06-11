@@ -20,6 +20,11 @@ Platform.prototype.get_collision_rect = function() {
 }
 
 
+Platform.prototype.get_pos = function() {
+    return new Pos2D(this.body.x,this.body.y);
+}
+
+
 Platform.prototype.set_color = function(color) {
     this.color = color;
 }
@@ -32,7 +37,7 @@ Platform.prototype.update = function(elapsed_time) {
 }
 
 
-Platform.prototype.draw = function(context) {
+Platform.prototype.draw = function(context,x,y) {
     context.fillStyle = this.color;
     context.fillRect(
         this.body.x,this.body.y,
@@ -218,9 +223,9 @@ World.prototype.update = function(player,elapsed_time) {
 }
 
 
-World.prototype.draw = function(context) {
+World.prototype.draw = function(context,x,y) {
     for (var i = 0; i < this.platforms.length; ++i) {
-        this.platforms[i].draw(context);
+        this.platforms[i].draw(context,x,y);
     }
 }
 

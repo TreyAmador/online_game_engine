@@ -206,6 +206,11 @@ Player.prototype.position_delta = function(elapsed_time) {
 }
 
 
+Player.prototype.get_pos = function() {
+    return new Pos2D(this.body.x,this.body.y);
+}
+
+
 // TODO perhaps replace the 2D kinematics with 1D
 //      more efficient, which is good to do
 // TODO pass the revised delta here then update 
@@ -215,7 +220,7 @@ Player.prototype.update = function(elapsed_time) {
     // this is a bit of a hack
     if (this.body.y > 800) {
         this.body.x = 320;
-        this.body.y = -200;
+        this.body.y = -40;
         this.vel.y = 0;
         this.vel.x = 0;
         this.surface.on_ground = false;
@@ -232,7 +237,7 @@ Player.prototype.update = function(elapsed_time) {
 }
 
 
-Player.prototype.draw = function(context) {
+Player.prototype.draw = function(context,x,y) {
 
     context.fillStyle = this.color;
     context.fillRect(
