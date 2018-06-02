@@ -1,7 +1,6 @@
 // player is here for player purposes
 
 
-
 function Surface() {
     
     this.on_ground = false;
@@ -129,7 +128,6 @@ Player.prototype.jump = function() {
 }
 
 
-
 Player.prototype.recover_jump = function() {
 
     // TODO implement conditional which 'dampens' jump
@@ -217,6 +215,8 @@ Player.prototype.get_pos = function() {
 //      position passed here
 Player.prototype.update = function(elapsed_time) {
 
+    this.init_frame();
+
     // this is a bit of a hack
     if (this.body.y > 800) {
         this.body.x = 320;
@@ -240,8 +240,7 @@ Player.prototype.update = function(elapsed_time) {
 Player.prototype.draw = function(context,x,y) {
 
     context.fillStyle = this.color;
-    context.fillRect(
-        this.body.x,this.body.y,
+    context.fillRect(x,y,
         this.body.w,this.body.h);
 
     // particle draw    

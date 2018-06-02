@@ -59,7 +59,7 @@ Core.prototype.init_entities = function() {
     this.world.init();
     this.world.load_level();
 
-    this.player = new Player(320,-40,40,40);
+    this.player = new Player(320,400,40,40);
 
     this.camera = new Camera(0,0,
         this.canvas.width,this.canvas.height);
@@ -100,26 +100,19 @@ Core.prototype.handle_input = function() {
 
 
 Core.prototype.update = function() {
-    this.player.init_frame();
-    this.world.update(this.player,FRAME_RATE);
+
+    this.camera.init_frame(this.player);
     this.player.update(FRAME_RATE);
-
-
-    this.camera.update(FRAME_RATE,this.player);
-
+    var delta = this.world.update(this.player,FRAME_RATE);
+    // this.camera.update(FRAME_RATE,delta);
 
 }
 
 
 Core.prototype.draw = function() {
-    //this.player.draw(this.context);
-    //this.world.draw(this.context);
-
 
     this.camera.capture(this.context,this.player);
-    this.camera.capture_world(this.context,this.world);
-
-
+    this.camera.capture_list(this.context, this.world);
 }
 
 

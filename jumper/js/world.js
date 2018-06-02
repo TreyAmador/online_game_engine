@@ -39,8 +39,7 @@ Platform.prototype.update = function(elapsed_time) {
 
 Platform.prototype.draw = function(context,x,y) {
     context.fillStyle = this.color;
-    context.fillRect(
-        this.body.x,this.body.y,
+    context.fillRect(x,y,
         this.body.w,this.body.h);
 }
 
@@ -210,20 +209,21 @@ World.prototype.collision_left = function(rect,player,delta_x) {
 }
 
 
-World.prototype.get_platforms = function() {
+World.prototype.get_elems = function() {
     return this.platforms;
 }
 
 
 World.prototype.update = function(player,elapsed_time) {
 
-    for (var i = 0; i < this.platforms.length; ++i){
+    for (var i = 0; i < this.platforms.length; ++i)
         this.platforms[i].update(elapsed_time);
-    }
 
     var delta = player.position_delta(elapsed_time);
     delta = this.detect_collision(player,delta);
     player.move_by_offset(delta);
+
+    return delta
 
 }
 
