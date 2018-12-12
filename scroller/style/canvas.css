@@ -1,0 +1,12 @@
+/* stylesheets for canvas */
+
+body, html {
+    overflow: hidden;
+    margin: 0px;
+}
+
+canvas {
+    background-color: #ffffff;
+    position: absolute;
+    top: 0px; left: 0px;
+}
