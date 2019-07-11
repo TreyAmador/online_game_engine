@@ -1,5 +1,5 @@
 const MSEC_PER_SEC = 1000;
-const FRAME_PER_SEC = 30;
+const FRAME_PER_SEC = 15;
 const FRAME_RATE = MSEC_PER_SEC / FRAME_PER_SEC;
 
 const CANVAS_WIDTH = 720;
@@ -21,16 +21,12 @@ class Media {
 };
 
 class Sprite {
-  constructor(x, y, w, h) {
+  constructor(media, filepath, x, y, w, h) {
     this.x = x;
     this.y = y;
     this.w = w;
-    this.h = h;    
-  }
-
-  load(filepath) {
-    this.img = new Image();
-    this.img.src = filepath;
+    this.h = h;
+    this.img = media.load(filepath);
   }
 
   draw(context, posX, posY) {
@@ -42,6 +38,23 @@ class Sprite {
       posX, posY,
       this.w, this.h
     );
+  }
+}
+
+class AnimatedSprite {
+  constructor(media, filepath, poses, w, h) {
+    this.sprites = poses.map((pose) => (
+      new Sprite(media, filepath, pose.x * w, pose.y * h, w, h)
+    ));
+    this.pose = 0;
+  }
+  
+  update() {
+    this.pose = ++this.pose % this.sprites.length;
+  }
+
+  draw(context, x, y) {
+    this.sprites[this.pose].draw(context, x, y);
   }
 }
 
@@ -63,8 +76,19 @@ class Game {
   }
 
   initSprites() {
-    this.sprite = new Sprite(0, 0, 32, 32);
-    this.sprite.load('img/player.bmp')
+    this.media = new Media();
+    // this.sprite = new Sprite(this.media, 'img/player.bmp', 0, 0, 32, 32);
+    this.sprite = new AnimatedSprite(
+      this.media,
+      'img/player.bmp',
+      [
+        { x: 0, y: 0 },
+        { x: 1, y: 0 },
+        { x: 0, y: 0 },
+        { x: 2, y: 0 },
+      ],
+      32, 32
+    );
   }
 
   clear() {
@@ -73,9 +97,6 @@ class Game {
   }
 
   run() {
-    // this.startClock();
-    this.draw();
-    
     let self = this;
     setInterval(() => {
       self.clear();
@@ -87,6 +108,7 @@ class Game {
 
   update() {
     // move each frame here
+    this.sprite.update();
   }
 
   draw() {
