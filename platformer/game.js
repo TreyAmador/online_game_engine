@@ -1,9 +1,54 @@
+/**
+ * a very fun platforming engine for a very fun platforming game
+ */
+
 const MSEC_PER_SEC = 1000;
 const FRAME_PER_SEC = 15;
 const FRAME_RATE = MSEC_PER_SEC / FRAME_PER_SEC;
 
+const KEY = Object.freeze({
+  UP: 38,
+  DOWN: 40,
+  LEFT: 37,
+  RIGHT: 39,
+  SPACE: 32
+});
+
 const CANVAS_WIDTH = 720;
 const CANVAS_HEIGHT = 540;
+
+const MOVE_HORIZ_ACCEL = 0.0025;
+const STOP_HORIZ_ACCEL = 0.0;
+const MOVE_HORIZ_FRICTION = 0.75;
+const JUMP_ACCEL = -0.002;
+
+class Input {
+  constructor() {
+    this.pressed = {};
+    this.init();
+  }
+
+  init() {
+    window.addEventListener('keyup', (event) => {
+      this.onKeyUp(event);
+    });
+    window.addEventListener('keydown', (event) => {
+      this.onKeyDown(event);
+    });
+  }
+
+  isDown(keyCode) {
+      return this.pressed[keyCode];
+  }
+
+  onKeyDown(event) {
+      this.pressed[event.keyCode] = true;
+  }
+
+  onKeyUp(event) {
+      delete this.pressed[event.keyCode];
+  }
+};
 
 class Media {
   constructor() {
@@ -48,20 +93,79 @@ class AnimatedSprite {
     ));
     this.pose = 0;
   }
-  
-  update() {
-    this.pose = ++this.pose % this.sprites.length;
-  }
 
   draw(context, x, y) {
+    this.pose = ++this.pose % this.sprites.length;
     this.sprites[this.pose].draw(context, x, y);
   }
 }
 
+class Player {
+  constructor(media, x, y) {
+    this.x = x;
+    this.y = y;
+    this.vx = 0;
+    this.vy = 0;
+    this.ax = 0;
+    this.ay = 0;
+    this.sprite = new AnimatedSprite(
+      media,
+      'img/player.bmp',
+      [
+        { x: 0, y: 0 },
+        { x: 1, y: 0 },
+        { x: 0, y: 0 },
+        { x: 2, y: 0 },
+      ],
+      32, 32
+    );
+    this.input = new Input();
+  }
+
+  moveLeft() {
+    this.ax = -MOVE_HORIZ_ACCEL;
+  }
+
+  moveRight() {
+    this.ax = MOVE_HORIZ_ACCEL;
+  }
+
+  stopMoving() {
+    this.ax = STOP_HORIZ_ACCEL;
+  }
+
+  jump() {
+    this.ay = JUMP_ACCEL;
+  }
+
+  update(updateTime) {
+    if (this.input.isDown(KEY.LEFT) && this.input.isDown(KEY.RIGHT)) {
+      this.stopMoving();
+    } else if (this.input.isDown(KEY.LEFT)) {
+      this.moveLeft();
+    } else if (this.input.isDown(KEY.RIGHT)) {
+      this.moveRight();
+    } else {
+      this.stopMoving();
+    }
+    if (this.input.isDown(KEY.SPACE)) {
+      this.jump();
+    }
+
+    this.vx += this.ax * updateTime;
+    this.x += (0.5 * this.ax * updateTime * updateTime + this.vx * updateTime);
+    this.vx *= MOVE_HORIZ_FRICTION;
+  }
+
+  draw(context) {
+    this.sprite.draw(context, this.x, this.y);
+  }
+};
+
 class Game {
   constructor() {
     this.initCanvas();
-    this.initSprites();
+    this.initPlayer();
   }
 
   initCanvas() {
@@ -75,20 +179,9 @@ class Game {
     port.appendChild(this.canvas);
   }
 
-  initSprites() {
+  initPlayer() {
     this.media = new Media();
-    // this.sprite = new Sprite(this.media, 'img/player.bmp', 0, 0, 32, 32);
-    this.sprite = new AnimatedSprite(
-      this.media,
-      'img/player.bmp',
-      [
-        { x: 0, y: 0 },
-        { x: 1, y: 0 },
-        { x: 0, y: 0 },
-        { x: 2, y: 0 },
-      ],
-      32, 32
-    );
+    this.player = new Player(this.media, 0, 0);    
   }
 
   clear() {
@@ -100,21 +193,18 @@ class Game {
     let self = this;
     setInterval(() => {
       self.clear();
-      self.update();
-      self.draw();
+      self.update(FRAME_RATE);
+      self.draw(self.context);
     }, FRAME_RATE);
 
   }
 
-  update() {
-    // move each frame here
-    this.sprite.update();
+  update(updateTime) {
+    this.player.update(updateTime);
   }
 
-  draw() {
-    let x = 0;
-    let y = 0;
-    this.sprite.draw(this.context, x, y);
+  draw(context) {
+    this.player.draw(context);
   }
 }
 
