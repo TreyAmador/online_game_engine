@@ -17,10 +17,26 @@ const KEY = Object.freeze({
 const CANVAS_WIDTH = 720;
 const CANVAS_HEIGHT = 540;
 
+const GRAVITY_ACCEL = 0.00098;
+
 const MOVE_HORIZ_ACCEL = 0.0025;
-const STOP_HORIZ_ACCEL = 0.0;
 const MOVE_HORIZ_FRICTION = 0.75;
-const JUMP_ACCEL = -0.002;
+const STOP_HORIZ_ACCEL = 0.0;
+
+const JUMP_HORIZ_ACCEL = 0.0015;
+const JUMP_VEL = -0.8;
+
+class PhysicsEngine {
+  position(x, v, a, t) {
+    return 0.5 * a * t * t + v * t + x;
+  }
+
+  velocity(v, a, t) {
+    return a * t + v;
+  }
+};
+
+const Physics = new PhysicsEngine();
 
 class Input {
   constructor() {
@@ -119,15 +135,24 @@ class Player {
       ],
       32, 32
     );
+    this.grounded = false;
     this.input = new Input();
   }
 
   moveLeft() {
-    this.ax = -MOVE_HORIZ_ACCEL;
+    if (this.grounded) {
+      this.ax = -MOVE_HORIZ_ACCEL;
+    } else {
+      this.ax = -JUMP_HORIZ_ACCEL;
+    }
   }
 
   moveRight() {
-    this.ax = MOVE_HORIZ_ACCEL;
+    if (this.grounded) {
+      this.ax = MOVE_HORIZ_ACCEL;
+    } else {
+      this.ax = JUMP_HORIZ_ACCEL;
+    }
   }
 
   stopMoving() {
@@ -135,7 +160,10 @@ class Player {
   }
 
   jump() {
-    this.ay = JUMP_ACCEL;
+    if (this.grounded) {
+      this.vy = JUMP_VEL;
+      this.grounded = false;
+    }
   }
 
   update(updateTime) {
@@ -152,15 +180,25 @@ class Player {
       this.jump();
     }
 
-    this.vx += this.ax * updateTime;
-    this.x += (0.5 * this.ax * updateTime * updateTime + this.vx * updateTime);
+    this.vx = Physics.velocity(this.vx, this.ax, updateTime);
+    this.x = Physics.position(this.x, this.vx, this.ax, updateTime);
     this.vx *= MOVE_HORIZ_FRICTION;
+
+    this.vy = Physics.velocity(this.vy, GRAVITY_ACCEL, updateTime);
+    this.y = Physics.position(this.y, this.vy, this.ay, updateTime);
+
+    // TODO: add collision detection instead of this hack
+    if (this.y > 500) {
+      this.y = 500;
+      this.vy = 0.0;
+      this.grounded = true;
+    }
   }
 
   draw(context) {
     this.sprite.draw(context, this.x, this.y);
   }
-};
+}
 
 class Game {
   constructor() {
