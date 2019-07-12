@@ -26,6 +26,19 @@ const STOP_HORIZ_ACCEL = 0.0;
 const JUMP_HORIZ_ACCEL = 0.0015;
 const JUMP_VEL = -0.8;
 
+const STATES = Object.freeze({
+  RIGHT_STILL_FORWARD: 'right still horizontal',
+  LEFT_STILL_FORWARD: 'left still horizontal',
+  RIGHT_WALK_FORWARD: 'right walk horizontal',
+  LEFT_WALK_FORWARD: 'left walk horizontal',
+  RIGHT_STILL_UP: 'right still up',
+  LEFT_STILL_UP: 'left still up',
+  RIGHT_WALK_UP: 'right walk up',
+  LEFT_WALK_UP: 'left walk up',
+  RIGHT_STILL_DOWN: 'right still down',
+  LEFT_STILL_DOWN: 'left still down',
+});
+
 class PhysicsEngine {
   position(x, v, a, t) {
     return 0.5 * a * t * t + v * t + x;
@@ -124,39 +137,116 @@ class Player {
     this.vy = 0;
     this.ax = 0;
     this.ay = 0;
-    this.sprite = new AnimatedSprite(
-      media,
-      'img/player.bmp',
+
+    this.sprites = {};
+    this.addState(media, STATES.RIGHT_STILL_FORWARD, [{ x: 0, y: 1 }]);
+    this.addState(media, STATES.LEFT_STILL_FORWARD, [{ x: 0, y: 0 }]);
+    this.addState(media,
+      STATES.RIGHT_WALK_FORWARD,
+      [
+        { x: 0, y: 1 },
+        { x: 1, y: 1 },
+        { x: 0, y: 1 },
+        { x: 2, y: 1 },
+      ]
+    );
+    this.addState(media,
+      STATES.LEFT_WALK_FORWARD,
       [
         { x: 0, y: 0 },
         { x: 1, y: 0 },
         { x: 0, y: 0 },
         { x: 2, y: 0 },
-      ],
-      32, 32
+      ]
     );
+    this.addState(media,
+      STATES.RIGHT_WALK_UP,
+      [
+        { x: 3, y: 1 },
+        { x: 4, y: 1 },
+        { x: 3, y: 1 },
+        { x: 5, y: 1 },
+      ]
+    );
+    this.addState(media,
+      STATES.LEFT_WALK_UP,
+      [
+        { x: 3, y: 0 },
+        { x: 4, y: 0 },
+        { x: 3, y: 0 },
+        { x: 5, y: 0 },
+      ]
+    );
+    this.addState(media, STATES.RIGHT_STILL_UP, [{ x: 3, y: 1 }]);
+    this.addState(media, STATES.LEFT_STILL_UP, [{ x: 3, y: 0 }]);
+    this.addState(media, STATES.RIGHT_STILL_DOWN, [{ x: 6, y: 1 }]);
+    this.addState(media, STATES.RIGHT_STILL_DOWN, [{ x: 6, y: 0 }]);
+
+    this.state = STATES.RIGHT_STILL_FORWARD;
     this.grounded = false;
+
     this.input = new Input();
+  }
+
+  addState(media, state, pose) {
+    this.sprites[state] = new AnimatedSprite(media, 'img/player.bmp', pose, 32, 32);
   }
 
   moveLeft() {
     if (this.grounded) {
       this.ax = -MOVE_HORIZ_ACCEL;
+      this.state = STATES.LEFT_WALK_FORWARD;
     } else {
       this.ax = -JUMP_HORIZ_ACCEL;
+      this.state = STATES.LEFT_WALK_FORWARD;
     }
   }
 
   moveRight() {
     if (this.grounded) {
       this.ax = MOVE_HORIZ_ACCEL;
+      this.state = STATES.RIGHT_WALK_FORWARD;
     } else {
       this.ax = JUMP_HORIZ_ACCEL;
+      this.state = STATES.RIGHT_WALK_FORWARD;
     }
   }
 
   stopMoving() {
     this.ax = STOP_HORIZ_ACCEL;
+    if (this.state === STATES.RIGHT_WALK_FORWARD) {
+      this.state = STATES.RIGHT_STILL_FORWARD;
+    } else if (this.state === STATES.LEFT_WALK_FORWARD) {
+      this.state = STATES.LEFT_STILL_FORWARD;
+    } else if (this.state === STATES.RIGHT_WALK_UP) {
+      this.state = STATES.RIGHT_STILL_UP;
+    } else if (this.state === STATES.LEFT_WALK_UP) {
+      this.state = STATES.LEFT_STILL_UP;
+    }
+  }
+
+  lookUp() {
+    if (this.state === STATES.RIGHT_STILL_FORWARD) {
+      this.state = STATES.RIGHT_STILL_UP;
+    } else if (this.state === STATES.LEFT_STILL_FORWARD) {
+      this.state = STATES.LEFT_STILL_UP;
+    } else if (this.state === STATES.LEFT_WALK_FORWARD) {
+      this.state = STATES.LEFT_WALK_UP;
+    } else if (this.state === STATES.RIGHT_WALK_FORWARD) {
+      this.state = STATES.RIGHT_WALK_UP;
+    }
+  }
+
+  lookForward() {
+    if (this.state === STATES.RIGHT_STILL_UP) {
+      this.state = STATES.RIGHT_STILL_FORWARD;
+    } else if (this.state === STATES.LEFT_STILL_UP) {
+      this.state = STATES.LEFT_STILL_FORWARD;
+    } else if (this.state === STATES.RIGHT_WALK_UP) {
+      this.state = STATES.RIGHT_WALK_FORWARD;
+    } else if (this.state === STATES.LEFT_WALK_UP) {
+      this.state = STATES.LEFT_WALK_FORWARD;
+    }
   }
 
   jump() {
@@ -175,6 +265,11 @@ class Player {
       this.moveRight();
     } else {
       this.stopMoving();
+    }
+    if (this.input.isDown(KEY.UP)) {
+      this.lookUp();
+    } else {
+      this.lookForward();
     }
     if (this.input.isDown(KEY.SPACE)) {
       this.jump();
@@ -196,7 +291,7 @@ class Player {
   }
 
   draw(context) {
-    this.sprite.draw(context, this.x, this.y);
+    this.sprites[this.state].draw(context, this.x, this.y);
   }
 }
 
