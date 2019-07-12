@@ -36,23 +36,6 @@ const MAX_HORIZ_ACCEL = 0.02;
 const JUMP_HORIZ_ACCEL = 0.0035;
 const JUMP_VEL = -0.8;
 
-/*
-
-const STATES = Object.freeze({
-  RIGHT_STILL_FORWARD: 'right still horizontal',
-  LEFT_STILL_FORWARD: 'left still horizontal',
-  RIGHT_WALK_FORWARD: 'right walk horizontal',
-  LEFT_WALK_FORWARD: 'left walk horizontal',
-  RIGHT_STILL_UP: 'right still up',
-  LEFT_STILL_UP: 'left still up',
-  RIGHT_WALK_UP: 'right walk up',
-  LEFT_WALK_UP: 'left walk up',
-  RIGHT_STILL_DOWN: 'right still down',
-  LEFT_STILL_DOWN: 'left still down',
-});
-
-*/
-
 const STATES = {
   HORIZONTAL: {
     RIGHT: 'right',
@@ -232,6 +215,9 @@ class Player {
     this.sprites = {};
     this.addState(media, this.state.key(RIGHT, FORWARD, IDLE), [{ x: 0, y: 1 }]);
     this.addState(media, this.state.key(LEFT, FORWARD, IDLE), [{ x: 0, y: 0 }]);
+    this.addState(media, this.state.key(RIGHT, UP, IDLE), [{ x: 3, y: 1 }]);
+    this.addState(media, this.state.key(LEFT, UP, IDLE), [{ x: 3, y: 0 }]);
+
     this.addState(media,
       this.state.key(RIGHT, FORWARD, WALKING),
       [
@@ -268,10 +254,16 @@ class Player {
         { x: 5, y: 0 },
       ]
     );
-    this.addState(media, this.state.key(RIGHT, UP, IDLE), [{ x: 3, y: 1 }]);
-    this.addState(media, this.state.key(LEFT, UP, IDLE), [{ x: 3, y: 0 }]);
-    this.addState(media, this.state.key(RIGHT, DOWN, IDLE), [{ x: 6, y: 1 }]);
-    this.addState(media, this.state.key(LEFT, DOWN, IDLE), [{ x: 6, y: 0 }]);
+
+    this.addState(media, this.state.key(RIGHT, UP, RISING), [{ x: 4, y: 1 }]);
+    this.addState(media, this.state.key(LEFT, UP, RISING), [{ x: 4, y: 0 }]);
+    this.addState(media, this.state.key(RIGHT, FORWARD, RISING), [{ x: 1, y: 1 }]);
+    this.addState(media, this.state.key(LEFT, FORWARD, RISING), [{ x: 1, y: 0 }]);
+
+    this.addState(media, this.state.key(RIGHT, UP, FALLING), [{ x: 4, y: 1 }]);
+    this.addState(media, this.state.key(LEFT, UP, FALLING), [{ x: 4, y: 0 }]);
+    this.addState(media, this.state.key(RIGHT, FORWARD, FALLING), [{ x: 1, y: 1 }]);
+    this.addState(media, this.state.key(LEFT, FORWARD, FALLING), [{ x: 1, y: 0 }]);
 
     this.grounded = false;
     this.recovered = false;
@@ -289,23 +281,21 @@ class Player {
   moveLeft() {
     if (this.grounded) {
       this.ax = -MOVE_HORIZ_ACCEL;
-      this.state.horizontal = STATES.HORIZONTAL.LEFT;
       this.state.movement = STATES.MOVEMENT.WALKING;
     } else {
       this.ax = -JUMP_HORIZ_ACCEL;
-      this.state.horizontal = STATES.HORIZONTAL.LEFT;
     }
+    this.state.horizontal = STATES.HORIZONTAL.LEFT;
   }
 
   moveRight() {
     if (this.grounded) {
       this.ax = MOVE_HORIZ_ACCEL;
-      this.state.horizontal = STATES.HORIZONTAL.RIGHT;
       this.state.movement = STATES.MOVEMENT.WALKING;
     } else {
       this.ax = JUMP_HORIZ_ACCEL;
-      this.state.horizontal = STATES.HORIZONTAL.RIGHT;
     }
+    this.state.horizontal = STATES.HORIZONTAL.RIGHT;
   }
 
   stopMoving() {
@@ -314,11 +304,15 @@ class Player {
   }
 
   lookUp() {
-    this.state.vertical = STATES.VERTICAL.UP;
+    if (this.grounded) {
+      this.state.vertical = STATES.VERTICAL.UP;
+    }
   }
 
   lookForward() {
-    this.state.vertical = STATES.VERTICAL.FORWARD;
+    if (this.grounded) {
+      this.state.vertical = STATES.VERTICAL.FORWARD;
+    }
   }
 
   jump() {
@@ -384,6 +378,16 @@ class Player {
       );
     }
     return rect;
+  }
+
+  updateState() {
+    if (!this.grounded) {
+      if (this.vy <= 0) {
+        this.state.movement = STATES.MOVEMENT.RISING;
+      } else {
+        this.state.movement = STATES.MOVEMENT.FALLING;
+      }
+    }
   }
 
   updateX(updateTime, map) {
@@ -475,8 +479,9 @@ class Player {
 
     this.updateX(updateTime, map);
     this.updateY(updateTime, map);
+    this.updateState();
 
-    // TODO: add collision detection instead of this hack
+    // TODO: generate map to have barriers
     if (this.x <= TILE_SIZE) {
       this.x = TILE_SIZE;
       this.vx = 0.0;
