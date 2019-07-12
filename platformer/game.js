@@ -360,6 +360,38 @@ class Player {
     return rect;
   }
 
+  updateX(updateTime, map) {
+    this.vx += Physics.velocity(this.vx, this.ax, updateTime);
+    this.vx *= MOVE_HORIZ_FRICTION;
+    let delta = Physics.position(this.x, this.vx, this.ax, updateTime);
+
+    if (delta > 0) {
+      let tile = this.collisions(map, this.rightCollision(delta));
+      if (tile) {
+        this.x = tile.x - this.collisionX.right();
+        this.vx = 0.0;
+      } else {
+        this.x += delta;
+      }
+      tile = this.collisions(map, this.leftCollision(0));
+      if (tile) {
+        this.x = tile.x + this.collisionX.right();
+      }
+    } else {
+      let tile = this.collisions(map, this.leftCollision(delta));
+      if (tile) {
+        this.x = tile.x + this.collisionX.right();        
+        this.vx = 0.0;
+      } else {
+        this.x += delta;
+      }
+      tile = this.collisions(map, this.rightCollision(0));
+      if (tile) {
+        this.x = tile.x - this.collisionX.right();
+      }
+    }
+  }
+
   updateY(updateTime, map) {
     this.vy += Physics.velocity(this.vy, GRAVITY_ACCEL, updateTime);
     let delta = Physics.position(this.y, this.vy, this.ay, updateTime);
@@ -413,20 +445,8 @@ class Player {
       this.jump();
     }
 
-    this.vx += Physics.velocity(this.vx, this.ax, updateTime);
-    this.x += Physics.position(this.x, this.vx, this.ax, updateTime);
-    this.vx *= MOVE_HORIZ_FRICTION;
-
-    //this.vy = Physics.velocity(this.vy, GRAVITY_ACCEL, updateTime);
-    //this.y = Physics.position(this.y, this.vy, this.ay, updateTime);
-
+    this.updateX(updateTime, map);
     this.updateY(updateTime, map);
-
-    //const rect = new Rectangle(this.x, this.y, TILE_SIZE, TILE_SIZE);
-    //const tiles = map.collidingTiles(rect);
-    // this.collisions(tiles, )
-
-
 
     // TODO: add collision detection instead of this hack
     if (this.y > CANVAS_HEIGHT - 2 * TILE_SIZE) {
