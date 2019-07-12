@@ -15,11 +15,11 @@ const KEY = Object.freeze({
 });
 
 const TILE_SIZE = 32;
-const TILE_ROWS = 25;
-const TILE_COLS = 18;
+const TILE_ROWS = 18;
+const TILE_COLS = 25;
 
-const CANVAS_WIDTH = TILE_SIZE * TILE_ROWS;
-const CANVAS_HEIGHT = TILE_SIZE * TILE_COLS;
+const CANVAS_WIDTH = TILE_SIZE * TILE_COLS;
+const CANVAS_HEIGHT = TILE_SIZE * TILE_ROWS;
 
 const GRAVITY_ACCEL = 0.00098;
 
@@ -134,7 +134,7 @@ class AnimatedSprite {
 }
 
 class Rectangle {
-  constructor(x, y, w, h, collision = true) {
+  constructor(x, y, w, h) {
     this.x = x;
     this.y = y;
     this.w = w;
@@ -146,7 +146,7 @@ class Rectangle {
   }
 
   right() {
-    return this.x + this.w;
+    return (this.x + this.w);
   }
 
   top() {
@@ -154,7 +154,7 @@ class Rectangle {
   }
 
   bottom() {
-    return this.y + this.h;
+    return (this.y + this.h);
   }
 
   width() {
@@ -358,7 +358,7 @@ class Player {
     return rect;
   }
 
-  update(updateTime) {
+  update(updateTime, map) {
     if (this.input.isDown(KEY.LEFT) && this.input.isDown(KEY.RIGHT)) {
       this.stopMoving();
     } else if (this.input.isDown(KEY.LEFT)) {
@@ -384,11 +384,24 @@ class Player {
     this.vy = Physics.velocity(this.vy, GRAVITY_ACCEL, updateTime);
     this.y = Physics.position(this.y, this.vy, this.ay, updateTime);
 
+    const rect = new Rectangle(this.x, this.y, TILE_SIZE, TILE_SIZE);
+    const tiles = map.collidingTiles(rect);
+    
     // TODO: add collision detection instead of this hack
     if (this.y > CANVAS_HEIGHT - 2 * TILE_SIZE) {
       this.y = CANVAS_HEIGHT - 2 * TILE_SIZE;
       this.vy = 0.0;
       this.grounded = true;
+    }
+
+    if (this.x <= TILE_SIZE) {
+      this.x = TILE_SIZE;
+      this.vx = 0.0;
+    }
+
+    if (this.x >= TILE_SIZE * TILE_COLS - 2 * TILE_SIZE) {
+      this.x = TILE_SIZE * TILE_COLS - 2 * TILE_SIZE;
+      this.vx = 0.0;
     }
   }
 
@@ -405,7 +418,7 @@ class Tile {
   }
 
   draw(context) {
-    if (this.collidable) {
+    if (this.color) {
       context.rectStyle = this.color;
       context.fillRect(this.rect.x, this.rect.y, this.rect.w, this.rect.h);
     }
@@ -414,8 +427,8 @@ class Tile {
 
 class Map {
   constructor() {
-    this.rows = Math.floor(CANVAS_WIDTH / TILE_SIZE);
-    this.cols = Math.floor(CANVAS_HEIGHT / TILE_SIZE);
+    this.rows = TILE_ROWS + 1;
+    this.cols = TILE_COLS + 1;
     this.tiles = new Array(this.rows);
     for (let r = 0; r < this.rows; ++r) {
       this.tiles[r] = new Array(this.cols);
@@ -423,12 +436,29 @@ class Map {
   }
 
   createTestMap() {
-    for (let r = 0; r < this.tiles.length; ++r) {
-      for (let c = 0; c < this.tiles[r].length; ++c) {
-        this.tiles[r][c] = new Tile(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE, '#ff0000');
+    for (let r = 0; r < this.rows; ++r) {
+      for (let c = 0; c < this.cols; ++c) {
+        this.tiles[r][c] = new Tile(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE, null);
       }
     }
-    this.tiles[20][10] = new Tile(20 * TILE_SIZE, 10 * TILE_SIZE, TILE_SIZE, TILE_SIZE, '#f0f0f0', true);
+    this.tiles[16][15] = new Tile(15 * TILE_SIZE, 16 * TILE_SIZE, TILE_SIZE, TILE_SIZE, '#f0f0f0', true);
+  }
+
+  collidingTiles(rect) {
+    let iRow = Math.floor(rect.top() / TILE_SIZE);
+    let fRow = Math.floor(rect.bottom() / TILE_SIZE);
+    let iCol = Math.floor(rect.left() / TILE_SIZE);
+    let fCol = Math.floor(rect.right() / TILE_SIZE);
+
+    let tiles = [];
+    for (let r = iRow; r <= fRow; ++r) {
+      for (let c = iCol; c <= fCol; ++c) {
+        if (this.tiles[r][c].collidable) {
+          tiles.push(this.tiles[r][c].rect);
+        }
+      }
+    }
+    return tiles;
   }
 
   draw(context) {
@@ -460,7 +490,7 @@ class Game {
 
   initPlayer() {
     this.media = new Media();
-    this.player = new Player(this.media, 0, 0);    
+    this.player = new Player(this.media, TILE_SIZE, 0);    
   }
 
   initMap() {
@@ -484,7 +514,7 @@ class Game {
   }
 
   update(updateTime) {
-    this.player.update(updateTime);
+    this.player.update(updateTime, this.map);
   }
 
   draw(context) {
