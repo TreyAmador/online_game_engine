@@ -14,8 +14,12 @@ const KEY = Object.freeze({
   SPACE: 32
 });
 
-const CANVAS_WIDTH = 720;
-const CANVAS_HEIGHT = 540;
+const TILE_SIZE = 32;
+const TILE_ROWS = 25;
+const TILE_COLS = 18;
+
+const CANVAS_WIDTH = TILE_SIZE * TILE_ROWS;
+const CANVAS_HEIGHT = TILE_SIZE * TILE_COLS;
 
 const GRAVITY_ACCEL = 0.00098;
 
@@ -129,6 +133,39 @@ class AnimatedSprite {
   }
 }
 
+class Rectangle {
+  constructor(x, y, w, h, collision = true) {
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+  }
+
+  left() {
+    return this.x;
+  }
+
+  right() {
+    return this.x + this.w;
+  }
+
+  top() {
+    return this.y;
+  }
+
+  bottom() {
+    return this.y + this.h;
+  }
+
+  width() {
+    return this.w;
+  }
+
+  height() {
+    return this.h;
+  }
+}
+
 class Player {
   constructor(media, x, y) {
     this.x = x;
@@ -137,6 +174,9 @@ class Player {
     this.vy = 0;
     this.ax = 0;
     this.ay = 0;
+
+    this.collisionX = new Rectangle(6, 10, 20, 12);
+    this.collisionY = new Rectangle(10, 2, 12, 30);
 
     this.sprites = {};
     this.addState(media, STATES.RIGHT_STILL_FORWARD, [{ x: 0, y: 1 }]);
@@ -189,7 +229,7 @@ class Player {
   }
 
   addState(media, state, pose) {
-    this.sprites[state] = new AnimatedSprite(media, 'img/player.bmp', pose, 32, 32);
+    this.sprites[state] = new AnimatedSprite(media, 'img/playertransparent.gif', pose, TILE_SIZE, TILE_SIZE);
   }
 
   moveLeft() {
@@ -256,6 +296,68 @@ class Player {
     }
   }
 
+  collisionInfo(tiles, rectangle) {
+    let collision = { collided: false, x: 0, y: 0 };
+
+    for (let tile of tiles) {
+      if (tile.collidable) {
+
+      }
+    }
+  }
+
+  topCollision(delta) {
+    let rect = null;
+    if (delta <= 0) {
+      rect = new Rectangle(
+        this.x + this.collisionY.left(),
+        this.y + this.collisionY.top() + delta,
+        this.collisionY.width(),
+        this.collisionY.height() / 2 - delta
+      );
+    }
+    return rect;
+  }
+
+  bottomCollision(delta) {
+    let rect = null;
+    if (delta >= 0) {
+      rect = new Rectangle(
+        this.x + this.collisionY.left(),
+        this.y + this.collisionY.top() + this.collisionY.height() / 2,
+        this.collisionY.width(),
+        this.collisionY.height() / 2 + delta
+      );
+    }
+    return rect;
+  }
+
+  leftCollision(delta) {
+    let rect = null;
+    if (delta <= 0) {
+      rect = new Rectangle(
+        this.x + this.collisionX.left() + delta,
+        this.y + this.collisionX.top(),
+        this.collisionX.width() / 2 - delta,
+        this.collisionX.height()
+      );
+    }
+    return rect;
+  }
+
+  rightCollision(delta) {
+    let rect = null;
+    if (delta >= 0) {
+      rect = new Rectangle(
+        this.x + this.collisionX.left() + this.collisionX.width() / 2,
+        this.y + this.collisionX.top(),
+        this.collisionX.width() / 2 + delta,
+        this.collisionX.height()
+      );
+    }
+    return rect;
+  }
+
   update(updateTime) {
     if (this.input.isDown(KEY.LEFT) && this.input.isDown(KEY.RIGHT)) {
       this.stopMoving();
@@ -283,8 +385,8 @@ class Player {
     this.y = Physics.position(this.y, this.vy, this.ay, updateTime);
 
     // TODO: add collision detection instead of this hack
-    if (this.y > 500) {
-      this.y = 500;
+    if (this.y > CANVAS_HEIGHT - 2 * TILE_SIZE) {
+      this.y = CANVAS_HEIGHT - 2 * TILE_SIZE;
       this.vy = 0.0;
       this.grounded = true;
     }
@@ -295,17 +397,61 @@ class Player {
   }
 }
 
+class Tile {
+  constructor(x, y, w, h, color, collidable = false) {
+    this.rect = new Rectangle(x, y, w, h);
+    this.color = color;
+    this.collidable = collidable;
+  }
+
+  draw(context) {
+    if (this.collidable) {
+      context.rectStyle = this.color;
+      context.fillRect(this.rect.x, this.rect.y, this.rect.w, this.rect.h);
+    }
+  }
+}
+
+class Map {
+  constructor() {
+    this.rows = Math.floor(CANVAS_WIDTH / TILE_SIZE);
+    this.cols = Math.floor(CANVAS_HEIGHT / TILE_SIZE);
+    this.tiles = new Array(this.rows);
+    for (let r = 0; r < this.rows; ++r) {
+      this.tiles[r] = new Array(this.cols);
+    }
+  }
+
+  createTestMap() {
+    for (let r = 0; r < this.tiles.length; ++r) {
+      for (let c = 0; c < this.tiles[r].length; ++c) {
+        this.tiles[r][c] = new Tile(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE, '#ff0000');
+      }
+    }
+    this.tiles[20][10] = new Tile(20 * TILE_SIZE, 10 * TILE_SIZE, TILE_SIZE, TILE_SIZE, '#f0f0f0', true);
+  }
+
+  draw(context) {
+    for (let row of this.tiles) {
+      for (let tile of row) {
+        tile.draw(context);
+      }
+    }
+  }
+}
+
 class Game {
   constructor() {
     this.initCanvas();
     this.initPlayer();
+    this.initMap();
   }
 
   initCanvas() {
     this.canvas = document.createElement('canvas');
     this.canvas.width = CANVAS_WIDTH;
     this.canvas.height = CANVAS_HEIGHT;
-    this.canvas.style.backgroundColor = '#fafafa';
+    this.canvas.style.backgroundColor = '#f0f0f0';
     this.context = this.canvas.getContext('2d');
     let port = document.getElementById('game-port');
     port.textContent = '';
@@ -315,6 +461,11 @@ class Game {
   initPlayer() {
     this.media = new Media();
     this.player = new Player(this.media, 0, 0);    
+  }
+
+  initMap() {
+    this.map = new Map();
+    this.map.createTestMap();
   }
 
   clear() {
@@ -337,6 +488,7 @@ class Game {
   }
 
   draw(context) {
+    this.map.draw(context);
     this.player.draw(context);
   }
 }
