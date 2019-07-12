@@ -297,17 +297,6 @@ class Player {
     }
   }
 
-  collisions(map, rectangle) {
-    // could simply call map.collidingTiles
-    // and return null or first element
-    // and remove this function completely
-    const tiles = map.collidingTiles(rectangle);
-    if (tiles.length == 0) {
-      return null;
-    }
-    return tiles[0];
-  }
-
   topCollision(delta) {
     let rect = null;
     if (delta <= 0) {
@@ -366,26 +355,26 @@ class Player {
     let delta = Physics.position(this.x, this.vx, this.ax, updateTime);
 
     if (delta > 0) {
-      let tile = this.collisions(map, this.rightCollision(delta));
+      let tile = map.collidingTiles(this.rightCollision(delta));
       if (tile) {
         this.x = tile.x - this.collisionX.right();
         this.vx = 0.0;
       } else {
         this.x += delta;
       }
-      tile = this.collisions(map, this.leftCollision(0));
+      tile = map.collidingTiles(this.leftCollision(0));
       if (tile) {
         this.x = tile.x + this.collisionX.right();
       }
     } else {
-      let tile = this.collisions(map, this.leftCollision(delta));
+      let tile = map.collidingTiles(this.leftCollision(delta));
       if (tile) {
         this.x = tile.x + this.collisionX.right();        
         this.vx = 0.0;
       } else {
         this.x += delta;
       }
-      tile = this.collisions(map, this.rightCollision(0));
+      tile = map.collidingTiles(this.rightCollision(0));
       if (tile) {
         this.x = tile.x - this.collisionX.right();
       }
@@ -396,29 +385,29 @@ class Player {
     this.vy += Physics.velocity(this.vy, GRAVITY_ACCEL, updateTime);
     let delta = Physics.position(this.y, this.vy, this.ay, updateTime);
     if (delta > 0) {
-      let tile = this.collisions(map, this.bottomCollision(delta));
+      let tile = map.collidingTiles(this.bottomCollision(delta));
       if (tile) {
         this.y = tile.y - this.collisionY.bottom();
-        this.vx = 0.0;
+        this.vy = 0.0;
         this.grounded = true;
       } else {
         this.y += delta;
         this.grounded = false;
       }
-      tile = this.collisions(map, this.topCollision(0));
+      tile = map.collidingTiles(this.topCollision(0));
       if (tile) {
         this.y = tile.y + this.collisionY.height();
       }
     } else {
-      let tile = this.collisions(map, this.topCollision(delta));
+      let tile = map.collidingTiles(this.topCollision(delta));
       if (tile) {
         this.y = tile.y + this.collisionY.height();
-        this.vx = 0.0;
+        this.vy = 0.0;
       } else {
         this.y += delta;
         this.grounded = false;
       }
-      tile = this.collisions(map, this.bottomCollision(0));
+      tile = map.collidingTiles(this.bottomCollision(0));
       if (tile) {
         this.y = tile.y - this.collisionY.bottom();
         this.grounded = true;
@@ -501,8 +490,9 @@ class Map {
         this.tiles[r][c] = new Tile(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE, null);
       }
     }
+    this.tiles[10][13] = new Tile(13 * TILE_SIZE, 10 * TILE_SIZE, TILE_SIZE, TILE_SIZE, '#f0f0f0', true);
     this.tiles[16][15] = new Tile(15 * TILE_SIZE, 16 * TILE_SIZE, TILE_SIZE, TILE_SIZE, '#f0f0f0', true);
-    this.tiles[16][1] = new Tile(1 * TILE_SIZE, 16 * TILE_SIZE, TILE_SIZE, TILE_SIZE, '#f0f0f0', true);
+    this.tiles[16][2] = new Tile(2 * TILE_SIZE, 16 * TILE_SIZE, TILE_SIZE, TILE_SIZE, '#f0f0f0', true);
   }
 
   collidingTiles(rect) {
@@ -511,15 +501,14 @@ class Map {
     let iCol = Math.floor(rect.left() / TILE_SIZE);
     let fCol = Math.floor(rect.right() / TILE_SIZE);
 
-    let tiles = [];
     for (let r = iRow; r <= fRow; ++r) {
       for (let c = iCol; c <= fCol; ++c) {
         if (this.tiles[r][c].collidable) {
-          tiles.push(this.tiles[r][c].rect);
+          return this.tiles[r][c].rect;
         }
       }
     }
-    return tiles;
+    return null;
   }
 
   draw(context) {
