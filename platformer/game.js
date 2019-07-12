@@ -3,7 +3,7 @@
  */
 
 const MSEC_PER_SEC = 1000;
-const FRAME_PER_SEC = 15;
+const FRAME_PER_SEC = 30;
 const FRAME_RATE = MSEC_PER_SEC / FRAME_PER_SEC;
 
 const KEY = Object.freeze({
@@ -15,20 +15,24 @@ const KEY = Object.freeze({
 });
 
 const TILE_SIZE = 32;
-const TILE_ROWS = 18;
-const TILE_COLS = 25;
 
-const CANVAS_WIDTH = TILE_SIZE * TILE_COLS;
-const CANVAS_HEIGHT = TILE_SIZE * TILE_ROWS;
+const TILE_ROWS = 30;
+const TILE_COLS = 200;
 
-const GRAVITY_ACCEL = 0.00098;
+const CANVAS_ROWS = 18;
+const CANVAS_COLS = 25;
 
-const MOVE_HORIZ_ACCEL = 0.0025;
+const CANVAS_WIDTH = TILE_SIZE * CANVAS_COLS;
+const CANVAS_HEIGHT = TILE_SIZE * CANVAS_ROWS;
+
+const GRAVITY_ACCEL = 0.0015;
+
+const MOVE_HORIZ_ACCEL = 0.0045;
 const MOVE_HORIZ_FRICTION = 0.75;
 const STOP_HORIZ_ACCEL = 0.0;
-const MAX_HORIZ_ACCEL = 0.01;
+const MAX_HORIZ_ACCEL = 0.02;
 
-const JUMP_HORIZ_ACCEL = 0.0015;
+const JUMP_HORIZ_ACCEL = 0.0035;
 const JUMP_VEL = -0.8;
 
 const STATES = Object.freeze({
@@ -225,6 +229,7 @@ class Player {
 
     this.state = STATES.RIGHT_STILL_FORWARD;
     this.grounded = false;
+    this.recovered = false;
 
     this.input = new Input();
   }
@@ -291,9 +296,15 @@ class Player {
   }
 
   jump() {
-    if (this.grounded) {
+    if (this.grounded && this.recovered) {
       this.vy = JUMP_VEL;
-      this.grounded = false;
+    }
+    this.recovered = false;
+  }
+
+  regainJump() {
+    if (this.grounded) {
+      this.recovered = true;
     }
   }
 
@@ -432,18 +443,14 @@ class Player {
     }
     if (this.input.isDown(KEY.SPACE)) {
       this.jump();
+    } else {
+      this.regainJump();
     }
 
     this.updateX(updateTime, map);
     this.updateY(updateTime, map);
 
     // TODO: add collision detection instead of this hack
-    if (this.y > CANVAS_HEIGHT - 2 * TILE_SIZE) {
-      this.y = CANVAS_HEIGHT - 2 * TILE_SIZE;
-      this.vy = 0.0;
-      this.grounded = true;
-    }
-
     if (this.x <= TILE_SIZE) {
       this.x = TILE_SIZE;
       this.vx = 0.0;
@@ -460,7 +467,7 @@ class Player {
 }
 
 class Tile {
-  constructor(x, y, w, h, color, collidable = false) {
+  constructor(x, y, w, h, color = null, collidable = false) {
     this.rect = new Rectangle(x, y, w, h);
     this.color = color;
     this.collidable = collidable;
@@ -476,8 +483,8 @@ class Tile {
 
 class Map {
   constructor() {
-    this.rows = TILE_ROWS + 1;
-    this.cols = TILE_COLS + 1;
+    this.rows = TILE_ROWS;
+    this.cols = TILE_COLS;
     this.tiles = new Array(this.rows);
     for (let r = 0; r < this.rows; ++r) {
       this.tiles[r] = new Array(this.cols);
@@ -487,12 +494,14 @@ class Map {
   createTestMap() {
     for (let r = 0; r < this.rows; ++r) {
       for (let c = 0; c < this.cols; ++c) {
-        this.tiles[r][c] = new Tile(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE, null);
+        if (r == 16) {
+          this.tiles[r][c] = new Tile(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE, '#f0f0f0', true);
+        } else {
+          this.tiles[r][c] = new Tile(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        }
       }
     }
-    this.tiles[10][13] = new Tile(13 * TILE_SIZE, 10 * TILE_SIZE, TILE_SIZE, TILE_SIZE, '#f0f0f0', true);
-    this.tiles[16][15] = new Tile(15 * TILE_SIZE, 16 * TILE_SIZE, TILE_SIZE, TILE_SIZE, '#f0f0f0', true);
-    this.tiles[16][2] = new Tile(2 * TILE_SIZE, 16 * TILE_SIZE, TILE_SIZE, TILE_SIZE, '#f0f0f0', true);
+    this.tiles[11][13] = new Tile(13 * TILE_SIZE, 11 * TILE_SIZE, TILE_SIZE, TILE_SIZE, '#f0f0f0', true);
   }
 
   collidingTiles(rect) {
@@ -520,11 +529,29 @@ class Map {
   }
 }
 
+class Camera {
+  constructor(x, y, w, h) {
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+  }
+
+  center(subject) {
+    this.x = subject.x + subject.w / 2 - this.w / 2;
+    this.y = subject.y + subject.h / 2 - this.h / 2; 
+  }
+
+  capture(subject) {
+    subject.draw();
+  }
+}
+
 class Game {
   constructor() {
     this.initCanvas();
-    this.initPlayer();
     this.initMap();
+    this.initPlayer();
   }
 
   initCanvas() {
