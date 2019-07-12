@@ -36,6 +36,8 @@ const MAX_HORIZ_ACCEL = 0.02;
 const JUMP_HORIZ_ACCEL = 0.0035;
 const JUMP_VEL = -0.8;
 
+/*
+
 const STATES = Object.freeze({
   RIGHT_STILL_FORWARD: 'right still horizontal',
   LEFT_STILL_FORWARD: 'left still horizontal',
@@ -48,6 +50,26 @@ const STATES = Object.freeze({
   RIGHT_STILL_DOWN: 'right still down',
   LEFT_STILL_DOWN: 'left still down',
 });
+
+*/
+
+const STATES = {
+  HORIZONTAL: {
+    RIGHT: 'right',
+    LEFT: 'left',
+  },
+  VERTICAL: {
+    UP: 'up',
+    FORWARD: 'forward',
+    DOWN: 'down',
+  },
+  MOVEMENT: {
+    IDLE: 'idle',
+    WALKING: 'walking',
+    RISING: 'rising',
+    FALLING: 'falling',
+  },
+};
 
 class PhysicsEngine {
   position(x, v, a, t) {
@@ -172,6 +194,22 @@ class Rectangle {
   }
 }
 
+class PlayerState {
+  constructor() {
+    this.horizontal = STATES.HORIZONTAL.RIGHT;
+    this.vertical = STATES.VERTICAL.FORWARD;
+    this.movement = STATES.MOVEMENT.IDLE;
+  }
+
+  key(horizontal, vertical, movement) {
+    return `${horizontal} ${vertical} ${movement}`;
+  }
+
+  get() {
+    return this.key(this.horizontal, this.vertical, this.movement);
+  }
+}
+
 class Player {
   constructor(media, x, y) {
     this.x = x;
@@ -186,11 +224,16 @@ class Player {
     this.collisionX = new Rectangle(6, 10, 20, 12);
     this.collisionY = new Rectangle(10, 2, 12, 30);
 
+    const { MOVEMENT: { IDLE, WALKING, RISING, FALLING } } = STATES;
+    const { HORIZONTAL: { RIGHT, LEFT } } = STATES;
+    const { VERTICAL: { UP, FORWARD, DOWN } } = STATES;
+    this.state = new PlayerState();
+    
     this.sprites = {};
-    this.addState(media, STATES.RIGHT_STILL_FORWARD, [{ x: 0, y: 1 }]);
-    this.addState(media, STATES.LEFT_STILL_FORWARD, [{ x: 0, y: 0 }]);
+    this.addState(media, this.state.key(RIGHT, FORWARD, IDLE), [{ x: 0, y: 1 }]);
+    this.addState(media, this.state.key(LEFT, FORWARD, IDLE), [{ x: 0, y: 0 }]);
     this.addState(media,
-      STATES.RIGHT_WALK_FORWARD,
+      this.state.key(RIGHT, FORWARD, WALKING),
       [
         { x: 0, y: 1 },
         { x: 1, y: 1 },
@@ -199,7 +242,7 @@ class Player {
       ]
     );
     this.addState(media,
-      STATES.LEFT_WALK_FORWARD,
+      this.state.key(LEFT, FORWARD, WALKING),
       [
         { x: 0, y: 0 },
         { x: 1, y: 0 },
@@ -208,7 +251,7 @@ class Player {
       ]
     );
     this.addState(media,
-      STATES.RIGHT_WALK_UP,
+      this.state.key(RIGHT, UP, WALKING),
       [
         { x: 3, y: 1 },
         { x: 4, y: 1 },
@@ -217,7 +260,7 @@ class Player {
       ]
     );
     this.addState(media,
-      STATES.LEFT_WALK_UP,
+      this.state.key(LEFT, UP, WALKING),
       [
         { x: 3, y: 0 },
         { x: 4, y: 0 },
@@ -225,12 +268,11 @@ class Player {
         { x: 5, y: 0 },
       ]
     );
-    this.addState(media, STATES.RIGHT_STILL_UP, [{ x: 3, y: 1 }]);
-    this.addState(media, STATES.LEFT_STILL_UP, [{ x: 3, y: 0 }]);
-    this.addState(media, STATES.RIGHT_STILL_DOWN, [{ x: 6, y: 1 }]);
-    this.addState(media, STATES.RIGHT_STILL_DOWN, [{ x: 6, y: 0 }]);
+    this.addState(media, this.state.key(RIGHT, UP, IDLE), [{ x: 3, y: 1 }]);
+    this.addState(media, this.state.key(LEFT, UP, IDLE), [{ x: 3, y: 0 }]);
+    this.addState(media, this.state.key(RIGHT, DOWN, IDLE), [{ x: 6, y: 1 }]);
+    this.addState(media, this.state.key(LEFT, DOWN, IDLE), [{ x: 6, y: 0 }]);
 
-    this.state = STATES.RIGHT_STILL_FORWARD;
     this.grounded = false;
     this.recovered = false;
 
@@ -238,64 +280,45 @@ class Player {
   }
 
   addState(media, state, pose) {
-    this.sprites[state] = new AnimatedSprite(media, 'img/playertransparent.gif', pose, TILE_SIZE, TILE_SIZE);
+    this.sprites[state] = new AnimatedSprite(
+      media, 'img/playertransparent.gif',
+      pose, TILE_SIZE, TILE_SIZE
+    );
   }
 
   moveLeft() {
     if (this.grounded) {
       this.ax = -MOVE_HORIZ_ACCEL;
-      this.state = STATES.LEFT_WALK_FORWARD;
+      this.state.horizontal = STATES.HORIZONTAL.LEFT;
+      this.state.movement = STATES.MOVEMENT.WALKING;
     } else {
       this.ax = -JUMP_HORIZ_ACCEL;
-      this.state = STATES.LEFT_WALK_FORWARD;
+      this.state.horizontal = STATES.HORIZONTAL.LEFT;
     }
   }
 
   moveRight() {
     if (this.grounded) {
       this.ax = MOVE_HORIZ_ACCEL;
-      this.state = STATES.RIGHT_WALK_FORWARD;
+      this.state.horizontal = STATES.HORIZONTAL.RIGHT;
+      this.state.movement = STATES.MOVEMENT.WALKING;
     } else {
       this.ax = JUMP_HORIZ_ACCEL;
-      this.state = STATES.RIGHT_WALK_FORWARD;
+      this.state.horizontal = STATES.HORIZONTAL.RIGHT;
     }
   }
 
   stopMoving() {
     this.ax = STOP_HORIZ_ACCEL;
-    if (this.state === STATES.RIGHT_WALK_FORWARD) {
-      this.state = STATES.RIGHT_STILL_FORWARD;
-    } else if (this.state === STATES.LEFT_WALK_FORWARD) {
-      this.state = STATES.LEFT_STILL_FORWARD;
-    } else if (this.state === STATES.RIGHT_WALK_UP) {
-      this.state = STATES.RIGHT_STILL_UP;
-    } else if (this.state === STATES.LEFT_WALK_UP) {
-      this.state = STATES.LEFT_STILL_UP;
-    }
+    this.state.movement = STATES.MOVEMENT.IDLE;
   }
 
   lookUp() {
-    if (this.state === STATES.RIGHT_STILL_FORWARD) {
-      this.state = STATES.RIGHT_STILL_UP;
-    } else if (this.state === STATES.LEFT_STILL_FORWARD) {
-      this.state = STATES.LEFT_STILL_UP;
-    } else if (this.state === STATES.LEFT_WALK_FORWARD) {
-      this.state = STATES.LEFT_WALK_UP;
-    } else if (this.state === STATES.RIGHT_WALK_FORWARD) {
-      this.state = STATES.RIGHT_WALK_UP;
-    }
+    this.state.vertical = STATES.VERTICAL.UP;
   }
 
   lookForward() {
-    if (this.state === STATES.RIGHT_STILL_UP) {
-      this.state = STATES.RIGHT_STILL_FORWARD;
-    } else if (this.state === STATES.LEFT_STILL_UP) {
-      this.state = STATES.LEFT_STILL_FORWARD;
-    } else if (this.state === STATES.RIGHT_WALK_UP) {
-      this.state = STATES.RIGHT_WALK_FORWARD;
-    } else if (this.state === STATES.LEFT_WALK_UP) {
-      this.state = STATES.LEFT_WALK_FORWARD;
-    }
+    this.state.vertical = STATES.VERTICAL.FORWARD;
   }
 
   jump() {
@@ -465,7 +488,7 @@ class Player {
   }
 
   draw(context) {
-    this.sprites[this.state].draw(context, this.x, this.y);
+    this.sprites[this.state.get()].draw(context, this.x, this.y);
   }
 }
 
