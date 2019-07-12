@@ -26,6 +26,7 @@ const GRAVITY_ACCEL = 0.00098;
 const MOVE_HORIZ_ACCEL = 0.0025;
 const MOVE_HORIZ_FRICTION = 0.75;
 const STOP_HORIZ_ACCEL = 0.0;
+const MAX_HORIZ_ACCEL = 0.01;
 
 const JUMP_HORIZ_ACCEL = 0.0015;
 const JUMP_VEL = -0.8;
@@ -45,11 +46,11 @@ const STATES = Object.freeze({
 
 class PhysicsEngine {
   position(x, v, a, t) {
-    return 0.5 * a * t * t + v * t + x;
+    return 0.5 * a * t * t + v * t;
   }
 
   velocity(v, a, t) {
-    return a * t + v;
+    return a * t;
   }
 };
 
@@ -296,14 +297,15 @@ class Player {
     }
   }
 
-  collisionInfo(tiles, rectangle) {
-    let collision = { collided: false, x: 0, y: 0 };
-
-    for (let tile of tiles) {
-      if (tile.collidable) {
-
-      }
+  collisions(map, rectangle) {
+    // could simply call map.collidingTiles
+    // and return null or first element
+    // and remove this function completely
+    const tiles = map.collidingTiles(rectangle);
+    if (tiles.length == 0) {
+      return null;
     }
+    return tiles[0];
   }
 
   topCollision(delta) {
@@ -358,6 +360,40 @@ class Player {
     return rect;
   }
 
+  updateY(updateTime, map) {
+    this.vy += Physics.velocity(this.vy, GRAVITY_ACCEL, updateTime);
+    let delta = Physics.position(this.y, this.vy, this.ay, updateTime);
+    if (delta > 0) {
+      let tile = this.collisions(map, this.bottomCollision(delta));
+      if (tile) {
+        this.y = tile.y - this.collisionY.bottom();
+        this.vx = 0.0;
+        this.grounded = true;
+      } else {
+        this.y += delta;
+        this.grounded = false;
+      }
+      tile = this.collisions(map, this.topCollision(0));
+      if (tile) {
+        this.y = tile.y + this.collisionY.height();
+      }
+    } else {
+      let tile = this.collisions(map, this.topCollision(delta));
+      if (tile) {
+        this.y = tile.y + this.collisionY.height();
+        this.vx = 0.0;
+      } else {
+        this.y += delta;
+        this.grounded = false;
+      }
+      tile = this.collisions(map, this.bottomCollision(0));
+      if (tile) {
+        this.y = tile.y - this.collisionY.bottom();
+        this.grounded = true;
+      }
+    }
+  }
+
   update(updateTime, map) {
     if (this.input.isDown(KEY.LEFT) && this.input.isDown(KEY.RIGHT)) {
       this.stopMoving();
@@ -377,16 +413,21 @@ class Player {
       this.jump();
     }
 
-    this.vx = Physics.velocity(this.vx, this.ax, updateTime);
-    this.x = Physics.position(this.x, this.vx, this.ax, updateTime);
+    this.vx += Physics.velocity(this.vx, this.ax, updateTime);
+    this.x += Physics.position(this.x, this.vx, this.ax, updateTime);
     this.vx *= MOVE_HORIZ_FRICTION;
 
-    this.vy = Physics.velocity(this.vy, GRAVITY_ACCEL, updateTime);
-    this.y = Physics.position(this.y, this.vy, this.ay, updateTime);
+    //this.vy = Physics.velocity(this.vy, GRAVITY_ACCEL, updateTime);
+    //this.y = Physics.position(this.y, this.vy, this.ay, updateTime);
 
-    const rect = new Rectangle(this.x, this.y, TILE_SIZE, TILE_SIZE);
-    const tiles = map.collidingTiles(rect);
-    
+    this.updateY(updateTime, map);
+
+    //const rect = new Rectangle(this.x, this.y, TILE_SIZE, TILE_SIZE);
+    //const tiles = map.collidingTiles(rect);
+    // this.collisions(tiles, )
+
+
+
     // TODO: add collision detection instead of this hack
     if (this.y > CANVAS_HEIGHT - 2 * TILE_SIZE) {
       this.y = CANVAS_HEIGHT - 2 * TILE_SIZE;
@@ -398,7 +439,6 @@ class Player {
       this.x = TILE_SIZE;
       this.vx = 0.0;
     }
-
     if (this.x >= TILE_SIZE * TILE_COLS - 2 * TILE_SIZE) {
       this.x = TILE_SIZE * TILE_COLS - 2 * TILE_SIZE;
       this.vx = 0.0;
@@ -442,6 +482,7 @@ class Map {
       }
     }
     this.tiles[16][15] = new Tile(15 * TILE_SIZE, 16 * TILE_SIZE, TILE_SIZE, TILE_SIZE, '#f0f0f0', true);
+    this.tiles[16][1] = new Tile(1 * TILE_SIZE, 16 * TILE_SIZE, TILE_SIZE, TILE_SIZE, '#f0f0f0', true);
   }
 
   collidingTiles(rect) {
