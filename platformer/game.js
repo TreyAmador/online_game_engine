@@ -54,6 +54,44 @@ const STATES = {
   },
 };
 
+function Vec2D(x,y) {
+  this.x = x;
+  this.y = y;
+}
+
+class Rectangle {
+  constructor(x, y, w, h) {
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+  }
+
+  left() {
+    return this.x;
+  }
+
+  right() {
+    return (this.x + this.w);
+  }
+
+  top() {
+    return this.y;
+  }
+
+  bottom() {
+    return (this.y + this.h);
+  }
+
+  width() {
+    return this.w;
+  }
+
+  height() {
+    return this.h;
+  }
+}
+
 class PhysicsEngine {
   position(x, v, a, t) {
     return 0.5 * a * t * t + v * t;
@@ -141,39 +179,6 @@ class AnimatedSprite {
   draw(context, x, y) {
     this.pose = ++this.pose % this.sprites.length;
     this.sprites[this.pose].draw(context, x, y);
-  }
-}
-
-class Rectangle {
-  constructor(x, y, w, h) {
-    this.x = x;
-    this.y = y;
-    this.w = w;
-    this.h = h;
-  }
-
-  left() {
-    return this.x;
-  }
-
-  right() {
-    return (this.x + this.w);
-  }
-
-  top() {
-    return this.y;
-  }
-
-  bottom() {
-    return (this.y + this.h);
-  }
-
-  width() {
-    return this.w;
-  }
-
-  height() {
-    return this.h;
   }
 }
 
@@ -393,8 +398,8 @@ class Player {
   updateX(updateTime, map) {
     this.vx += Physics.velocity(this.vx, this.ax, updateTime);
     this.vx *= MOVE_HORIZ_FRICTION;
-    let delta = Physics.position(this.x, this.vx, this.ax, updateTime);
 
+    let delta = Physics.position(this.x, this.vx, this.ax, updateTime);
     if (delta > 0) {
       let tile = map.collidingTiles(this.rightCollision(delta));
       if (tile) {
@@ -424,6 +429,7 @@ class Player {
 
   updateY(updateTime, map) {
     this.vy += Physics.velocity(this.vy, GRAVITY_ACCEL, updateTime);
+
     let delta = Physics.position(this.y, this.vy, this.ay, updateTime);
     if (delta > 0) {
       let tile = map.collidingTiles(this.bottomCollision(delta));
@@ -492,8 +498,8 @@ class Player {
     }
   }
 
-  draw(context) {
-    this.sprites[this.state.get()].draw(context, this.x, this.y);
+  draw(context, x, y) {
+    this.sprites[this.state.get()].draw(context, x, y);
   }
 }
 
@@ -504,10 +510,10 @@ class Tile {
     this.collidable = collidable;
   }
 
-  draw(context) {
+  draw(context, x, y) {
     if (this.color) {
       context.rectStyle = this.color;
-      context.fillRect(this.rect.x, this.rect.y, this.rect.w, this.rect.h);
+      context.fillRect(x, y, this.rect.w, this.rect.h);
     }
   }
 }
@@ -552,10 +558,54 @@ class Map {
     return null;
   }
 
-  draw(context) {
+  draw(context, x, y) {
     for (let row of this.tiles) {
       for (let tile of row) {
-        tile.draw(context);
+        tile.draw(context, x, y);
+      }
+    }
+  }
+}
+
+class Camera {
+  constructor(x, y) {
+    this.view = new Rectangle(x, y, CANVAS_WIDTH, CANVAS_HEIGHT);
+    this.initCanvas();
+  }
+
+  initCanvas() {
+    this.canvas = document.createElement('canvas');
+    this.canvas.width = this.view.w;
+    this.canvas.height = this.view.h;
+    this.canvas.style.backgroundColor = '#f0f0f0';
+    this.context = this.canvas.getContext('2d');
+
+    let port = document.getElementById('game-port');
+    port.textContent = '';
+    port.appendChild(this.canvas);
+  }
+
+  clear() {
+    this.context.clearRect(0, 0, this.view.w, this.view.h);
+  }
+
+  center(body) {
+    this.view.x = (body.x + body.w / 2) - this.view.w / 2;
+    this.view.y = (body.y + body.h / 2) - this.view.h / 2;
+  }
+
+  capture(subject) {
+    let x = subject.x - this.view.x;
+    let y = subject.y - this.view.y;
+    subject.draw(this.context, x, y);
+  }
+
+  captureMap(map) {
+    for (let row of map.tiles) {
+      for (let tile of row) {
+        var x = tile.rect.x - this.view.x;
+        var y = tile.rect.y - this.view.y;
+        tile.draw(this.context, x, y);
       }
     }
   }
@@ -563,20 +613,9 @@ class Map {
 
 class Game {
   constructor() {
-    this.initCanvas();
     this.initMap();
     this.initPlayer();
-  }
-
-  initCanvas() {
-    this.canvas = document.createElement('canvas');
-    this.canvas.width = CANVAS_WIDTH;
-    this.canvas.height = CANVAS_HEIGHT;
-    this.canvas.style.backgroundColor = '#f0f0f0';
-    this.context = this.canvas.getContext('2d');
-    let port = document.getElementById('game-port');
-    port.textContent = '';
-    port.appendChild(this.canvas);
+    this.initCamera();
   }
 
   initPlayer() {
@@ -589,9 +628,12 @@ class Game {
     this.map.createTestMap();
   }
 
+  initCamera() {
+    this.camera = new Camera(0, 0);
+  }
+
   clear() {
-    this.context.clearRect(0, 0,
-      this.canvas.width, this.canvas.height);
+    this.camera.clear();
   }
 
   run() {
@@ -599,18 +641,19 @@ class Game {
     setInterval(() => {
       self.clear();
       self.update(FRAME_RATE);
-      self.draw(self.context);
+      self.draw();
     }, FRAME_RATE);
 
   }
 
   update(updateTime) {
+    this.camera.center(this.player);
     this.player.update(updateTime, this.map);
   }
 
-  draw(context) {
-    this.map.draw(context);
-    this.player.draw(context);
+  draw() {
+    this.camera.capture(this.player);
+    this.camera.captureMap(this.map);
   }
 }
 
