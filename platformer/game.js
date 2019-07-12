@@ -16,9 +16,14 @@ const KEY = Object.freeze({
 
 const TILE_SIZE = 32;
 
-// TODO reduce number of tiles
+// TODO reduce number of tiles?
 const TILE_ROWS = 40;
-const TILE_COLS = 200;
+const TILE_COLS = 100;
+
+const LOW_ROW_BOUNDS = 1;
+const LOW_COL_BOUNDS = 1;
+const HIGH_ROW_BOUNDS = TILE_ROWS - 2;
+const HIGH_COL_BOUNDS = TILE_COLS - 2;
 
 const CANVAS_ROWS = 18;
 const CANVAS_COLS = 25;
@@ -54,11 +59,6 @@ const STATES = {
   },
 };
 
-function Vec2D(x,y) {
-  this.x = x;
-  this.y = y;
-}
-
 class Rectangle {
   constructor(x, y, w, h) {
     this.x = x;
@@ -93,11 +93,11 @@ class Rectangle {
 }
 
 class PhysicsEngine {
-  position(x, v, a, t) {
+  position(v, a, t) {
     return 0.5 * a * t * t + v * t;
   }
 
-  velocity(v, a, t) {
+  velocity(a, t) {
     return a * t;
   }
 };
@@ -187,6 +187,8 @@ class PlayerState {
     this.horizontal = STATES.HORIZONTAL.RIGHT;
     this.vertical = STATES.VERTICAL.FORWARD;
     this.movement = STATES.MOVEMENT.IDLE;
+    this.grounded = false;
+    this.rebounded = false;
   }
 
   key(horizontal, vertical, movement) {
@@ -270,9 +272,6 @@ class Player {
     this.addState(media, this.state.key(RIGHT, FORWARD, FALLING), [{ x: 1, y: 1 }]);
     this.addState(media, this.state.key(LEFT, FORWARD, FALLING), [{ x: 1, y: 0 }]);
 
-    this.grounded = false;
-    this.recovered = false;
-
     this.input = new Input();
   }
 
@@ -284,7 +283,7 @@ class Player {
   }
 
   moveLeft() {
-    if (this.grounded) {
+    if (this.state.grounded) {
       this.ax = -MOVE_HORIZ_ACCEL;
       this.state.movement = STATES.MOVEMENT.WALKING;
     } else {
@@ -294,7 +293,7 @@ class Player {
   }
 
   moveRight() {
-    if (this.grounded) {
+    if (this.state.grounded) {
       this.ax = MOVE_HORIZ_ACCEL;
       this.state.movement = STATES.MOVEMENT.WALKING;
     } else {
@@ -309,27 +308,23 @@ class Player {
   }
 
   lookUp() {
-    if (this.grounded) {
-      this.state.vertical = STATES.VERTICAL.UP;
-    }
+    this.state.vertical = STATES.VERTICAL.UP;
   }
 
   lookForward() {
-    if (this.grounded) {
-      this.state.vertical = STATES.VERTICAL.FORWARD;
-    }
+    this.state.vertical = STATES.VERTICAL.FORWARD;
   }
 
   jump() {
-    if (this.grounded && this.recovered) {
+    if (this.state.grounded && this.state.rebounded) {
       this.vy = JUMP_VEL;
     }
-    this.recovered = false;
+    this.state.rebounded = false;
   }
 
   regainJump() {
-    if (this.grounded) {
-      this.recovered = true;
+    if (this.state.grounded) {
+      this.state.rebounded = true;
     }
   }
 
@@ -385,8 +380,22 @@ class Player {
     return rect;
   }
 
+  boundryCollision(map) {
+    const rect = new Rectangle(this.x, this.y, this.w, this.h);
+    if (map.outOfBounds(rect)) {
+      this.x = map.checkpoint.x;
+      this.y = map.checkpoint.y;
+      this.vx = 0.0;
+      this.vy = 0.0;
+      this.ax = 0.0;
+      this.ay = 0.0;
+      this.state.grounded = false;
+      this.state.rebounded = false;
+    }
+  }
+
   updateState() {
-    if (!this.grounded) {
+    if (!this.state.grounded) {
       if (this.vy <= 0) {
         this.state.movement = STATES.MOVEMENT.RISING;
       } else {
@@ -396,10 +405,10 @@ class Player {
   }
 
   updateX(updateTime, map) {
-    this.vx += Physics.velocity(this.vx, this.ax, updateTime);
+    this.vx += Physics.velocity(this.ax, updateTime);
     this.vx *= MOVE_HORIZ_FRICTION;
 
-    let delta = Physics.position(this.x, this.vx, this.ax, updateTime);
+    let delta = Physics.position(this.vx, this.ax, updateTime);
     if (delta > 0) {
       let tile = map.collidingTiles(this.rightCollision(delta));
       if (tile) {
@@ -428,18 +437,18 @@ class Player {
   }
 
   updateY(updateTime, map) {
-    this.vy += Physics.velocity(this.vy, GRAVITY_ACCEL, updateTime);
+    this.vy += Physics.velocity(GRAVITY_ACCEL, updateTime);
 
-    let delta = Physics.position(this.y, this.vy, this.ay, updateTime);
+    let delta = Physics.position(this.vy, this.ay, updateTime);
     if (delta > 0) {
       let tile = map.collidingTiles(this.bottomCollision(delta));
       if (tile) {
         this.y = tile.y - this.collisionY.bottom();
         this.vy = 0.0;
-        this.grounded = true;
+        this.state.grounded = true;
       } else {
         this.y += delta;
-        this.grounded = false;
+        this.state.grounded = false;
       }
       tile = map.collidingTiles(this.topCollision(0));
       if (tile) {
@@ -452,12 +461,12 @@ class Player {
         this.vy = 0.0;
       } else {
         this.y += delta;
-        this.grounded = false;
+        this.state.grounded = false;
       }
       tile = map.collidingTiles(this.bottomCollision(0));
       if (tile) {
         this.y = tile.y - this.collisionY.bottom();
-        this.grounded = true;
+        this.state.grounded = true;
       }
     }
   }
@@ -486,16 +495,7 @@ class Player {
     this.updateX(updateTime, map);
     this.updateY(updateTime, map);
     this.updateState();
-
-    // TODO: generate map to have barriers
-    if (this.x <= TILE_SIZE) {
-      this.x = TILE_SIZE;
-      this.vx = 0.0;
-    }
-    if (this.x >= TILE_SIZE * TILE_COLS - 2 * TILE_SIZE) {
-      this.x = TILE_SIZE * TILE_COLS - 2 * TILE_SIZE;
-      this.vx = 0.0;
-    }
+    this.boundryCollision(map);
   }
 
   draw(context, x, y) {
@@ -520,12 +520,17 @@ class Tile {
 
 class Map {
   constructor() {
+    this.init();
+  }
+
+  init() {
     this.rows = TILE_ROWS;
     this.cols = TILE_COLS;
     this.tiles = new Array(this.rows);
     for (let r = 0; r < this.rows; ++r) {
       this.tiles[r] = new Array(this.cols);
     }
+    this.checkpoint = { x: 15 * TILE_SIZE, y: 10 * TILE_SIZE };
   }
 
   createTestMap() {
@@ -542,20 +547,40 @@ class Map {
     this.tiles[11][17] = new Tile(17 * TILE_SIZE, 11 * TILE_SIZE, TILE_SIZE, TILE_SIZE, '#f0f0f0', true);
   }
 
-  collidingTiles(rect) {
-    let iRow = Math.floor(rect.top() / TILE_SIZE);
-    let fRow = Math.floor(rect.bottom() / TILE_SIZE);
-    let iCol = Math.floor(rect.left() / TILE_SIZE);
-    let fCol = Math.floor(rect.right() / TILE_SIZE);
+  intersetion(rect) {
+    return {
+      rowi: Math.floor(rect.top() / TILE_SIZE),
+      rowf: Math.floor(rect.bottom() / TILE_SIZE),
+      coli: Math.floor(rect.left() / TILE_SIZE),
+      colf: Math.floor(rect.right() / TILE_SIZE),
+    };
+  }
 
-    for (let r = iRow; r <= fRow; ++r) {
-      for (let c = iCol; c <= fCol; ++c) {
+  collidingTiles(rect) {
+    const { rowi, rowf, coli, colf } = this.intersetion(rect);
+    for (let r = rowi; r <= rowf; ++r) {
+      for (let c = coli; c <= colf; ++c) {
         if (this.tiles[r][c].collidable) {
           return this.tiles[r][c].rect;
         }
       }
     }
     return null;
+  }
+
+  outOfBounds(rect) {
+    const { rowi, rowf, coli, colf } = this.intersetion(rect);
+    return (
+      rowi <= LOW_ROW_BOUNDS ||
+      rowf >= HIGH_ROW_BOUNDS ||
+      coli <= LOW_COL_BOUNDS ||
+      colf >= HIGH_COL_BOUNDS
+    );
+  }
+
+  resetCheckpoint(player) {
+    player.x = this.checkpoint.x;
+    player.y = this.checkpoint.y;
   }
 
   draw(context, x, y) {
@@ -595,16 +620,16 @@ class Camera {
   }
 
   capture(subject) {
-    let x = subject.x - this.view.x;
-    let y = subject.y - this.view.y;
+    let x = Math.round(subject.x - this.view.x);
+    let y = Math.round(subject.y - this.view.y);
     subject.draw(this.context, x, y);
   }
 
   captureMap(map) {
     for (let row of map.tiles) {
       for (let tile of row) {
-        var x = tile.rect.x - this.view.x;
-        var y = tile.rect.y - this.view.y;
+        var x = Math.round(tile.rect.x - this.view.x);
+        var y = Math.round(tile.rect.y - this.view.y);
         tile.draw(this.context, x, y);
       }
     }
@@ -620,7 +645,7 @@ class Game {
 
   initPlayer() {
     this.media = new Media();
-    this.player = new Player(this.media, TILE_SIZE, 0);    
+    this.player = new Player(this.media, this.map.checkpoint.x, this.map.checkpoint.y);    
   }
 
   initMap() {
@@ -643,21 +668,20 @@ class Game {
       self.update(FRAME_RATE);
       self.draw();
     }, FRAME_RATE);
-
   }
 
   update(updateTime) {
-    this.camera.center(this.player);
     this.player.update(updateTime, this.map);
   }
 
   draw() {
+    this.camera.center(this.player);
     this.camera.capture(this.player);
     this.camera.captureMap(this.map);
   }
 }
 
-window.addEventListener('load',function() {
+window.addEventListener('load', () => {
   let game = new Game();
   game.run();
 });
