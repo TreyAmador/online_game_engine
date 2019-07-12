@@ -16,7 +16,8 @@ const KEY = Object.freeze({
 
 const TILE_SIZE = 32;
 
-const TILE_ROWS = 30;
+// TODO reduce number of tiles
+const TILE_ROWS = 40;
 const TILE_COLS = 200;
 
 const CANVAS_ROWS = 18;
@@ -175,6 +176,8 @@ class Player {
   constructor(media, x, y) {
     this.x = x;
     this.y = y;
+    this.w = TILE_SIZE;
+    this.h = TILE_SIZE;
     this.vx = 0;
     this.vy = 0;
     this.ax = 0;
@@ -501,7 +504,8 @@ class Map {
         }
       }
     }
-    this.tiles[11][13] = new Tile(13 * TILE_SIZE, 11 * TILE_SIZE, TILE_SIZE, TILE_SIZE, '#f0f0f0', true);
+    this.tiles[11][10] = new Tile(10 * TILE_SIZE, 11 * TILE_SIZE, TILE_SIZE, TILE_SIZE, '#f0f0f0', true);
+    this.tiles[11][17] = new Tile(17 * TILE_SIZE, 11 * TILE_SIZE, TILE_SIZE, TILE_SIZE, '#f0f0f0', true);
   }
 
   collidingTiles(rect) {
@@ -526,24 +530,6 @@ class Map {
         tile.draw(context);
       }
     }
-  }
-}
-
-class Camera {
-  constructor(x, y, w, h) {
-    this.x = x;
-    this.y = y;
-    this.w = w;
-    this.h = h;
-  }
-
-  center(subject) {
-    this.x = subject.x + subject.w / 2 - this.w / 2;
-    this.y = subject.y + subject.h / 2 - this.h / 2; 
-  }
-
-  capture(subject) {
-    subject.draw();
   }
 }
 
