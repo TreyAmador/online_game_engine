@@ -14,19 +14,9 @@ const KEY = Object.freeze({
   SPACE: 32
 });
 
-const TILE_SIZE = 32;
-
-// TODO reduce number of tiles?
-const TILE_ROWS = 40;
-const TILE_COLS = 100;
-
-const LOW_ROW_BOUNDS = 1;
-const LOW_COL_BOUNDS = 1;
-const HIGH_ROW_BOUNDS = TILE_ROWS - 2;
-const HIGH_COL_BOUNDS = TILE_COLS - 2;
-
 const CANVAS_ROWS = 18;
 const CANVAS_COLS = 25;
+const TILE_SIZE = 32;
 
 const CANVAS_WIDTH = TILE_SIZE * CANVAS_COLS;
 const CANVAS_HEIGHT = TILE_SIZE * CANVAS_ROWS;
@@ -134,7 +124,6 @@ class Input {
 
 class Media {
   constructor() {
-    // TODO: init as map based on efficiency requirements?
     this.imgs = {};
   }
 
@@ -381,6 +370,7 @@ class Player {
   }
 
   boundryCollision(map) {
+    // TODO: replace with pre-init'd rect in player 
     const rect = new Rectangle(this.x, this.y, this.w, this.h);
     if (map.outOfBounds(rect)) {
       this.x = map.checkpoint.x;
@@ -519,32 +509,64 @@ class Tile {
 }
 
 class Map {
-  constructor() {
-    this.init();
-  }
-
   init() {
-    this.rows = TILE_ROWS;
-    this.cols = TILE_COLS;
-    this.tiles = new Array(this.rows);
-    for (let r = 0; r < this.rows; ++r) {
-      this.tiles[r] = new Array(this.cols);
-    }
-    this.checkpoint = { x: 15 * TILE_SIZE, y: 10 * TILE_SIZE };
+
   }
 
-  createTestMap() {
-    for (let r = 0; r < this.rows; ++r) {
-      for (let c = 0; c < this.cols; ++c) {
-        if (r == 16) {
-          this.tiles[r][c] = new Tile(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE, '#f0f0f0', true);
-        } else {
-          this.tiles[r][c] = new Tile(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+  read(key) {
+    const map = document.getElementById(key);
+    const size = this.cell(map);
+    this.tiles = new Array(size.r);
+    for (let r = 0; r < this.rows(); ++r) {
+      this.tiles[r] = new Array(size.c);
+      for (let c = 0; c < this.cols(); ++c) {
+        this.tiles[r][c] = null;
+      }
+    }
+
+    for (let elem of map.getElementsByTagName('tile')) {
+      const { r, c } = this.cell(elem);
+      this.tiles[r][c] = new Tile(
+        TILE_SIZE * c,
+        TILE_SIZE * r,
+        TILE_SIZE,
+        TILE_SIZE,
+        elem.getAttribute('color'),
+        true
+      );
+    }
+
+    for (let r = 0; r < this.tiles.length; ++r) {
+      for (let c = 0; c < this.tiles[r].length; ++c) {
+        if (!this.tiles[r][c]) {
+          this.tiles[r][c] = new Tile(
+            TILE_SIZE * c,
+            TILE_SIZE * r,
+            TILE_SIZE,
+            TILE_SIZE
+          );
         }
       }
     }
-    this.tiles[11][10] = new Tile(10 * TILE_SIZE, 11 * TILE_SIZE, TILE_SIZE, TILE_SIZE, '#f0f0f0', true);
-    this.tiles[11][17] = new Tile(17 * TILE_SIZE, 11 * TILE_SIZE, TILE_SIZE, TILE_SIZE, '#f0f0f0', true);
+
+    this.checkpoint = this.coordinate(
+      map.getElementsByTagName('start')[0]
+    );
+  }
+
+  coordinate(elem) {
+    const { r, c } = this.cell(elem);
+    return {
+      x: c * TILE_SIZE,
+      y: r * TILE_SIZE,
+    };
+  }
+
+  cell(elem) {
+    return {
+      r: parseInt(elem.getAttribute('y')),
+      c: parseInt(elem.getAttribute('x')),
+    };
   }
 
   intersetion(rect) {
@@ -571,10 +593,10 @@ class Map {
   outOfBounds(rect) {
     const { rowi, rowf, coli, colf } = this.intersetion(rect);
     return (
-      rowi <= LOW_ROW_BOUNDS ||
-      rowf >= HIGH_ROW_BOUNDS ||
-      coli <= LOW_COL_BOUNDS ||
-      colf >= HIGH_COL_BOUNDS
+      rowi <= this.lowRowBound() ||
+      rowf >= this.highRowBound() ||
+      coli <= this.lowColBound() ||
+      colf >= this.highColBound()
     );
   }
 
@@ -583,12 +605,28 @@ class Map {
     player.y = this.checkpoint.y;
   }
 
-  draw(context, x, y) {
-    for (let row of this.tiles) {
-      for (let tile of row) {
-        tile.draw(context, x, y);
-      }
-    }
+  lowRowBound() {
+    return 1;
+  }
+
+  highRowBound() {
+    return this.rows() - 2;
+  }
+
+  lowColBound() {
+    return 1;
+  }
+
+  highColBound() {
+    return this.cols() - 2;
+  }
+
+  rows() {
+    return this.tiles.length;
+  }
+
+  cols() {
+    return this.tiles[0].length;
   }
 }
 
@@ -614,9 +652,9 @@ class Camera {
     this.context.clearRect(0, 0, this.view.w, this.view.h);
   }
 
-  center(body) {
-    this.view.x = (body.x + body.w / 2) - this.view.w / 2;
-    this.view.y = (body.y + body.h / 2) - this.view.h / 2;
+  center(subject) {
+    this.view.x = (subject.x + subject.w / 2) - this.view.w / 2;
+    this.view.y = (subject.y + subject.h / 2) - this.view.h / 2;
   }
 
   capture(subject) {
@@ -650,7 +688,7 @@ class Game {
 
   initMap() {
     this.map = new Map();
-    this.map.createTestMap();
+    this.map.read('map01');
   }
 
   initCamera() {
