@@ -190,11 +190,11 @@ class PlayerState {
 }
 
 class Player {
-  constructor(media, x, y) {
+  constructor(media, x, y, w = TILE_SIZE, h = TILE_SIZE) {
     this.x = x;
     this.y = y;
-    this.w = TILE_SIZE;
-    this.h = TILE_SIZE;
+    this.w = w;
+    this.h = h;
     this.vx = 0;
     this.vy = 0;
     this.ax = 0;
@@ -384,6 +384,18 @@ class Player {
     }
   }
 
+  reachGoal(map) {
+    const rect = new Rectangle(this.x, this.y, this.w, this.h);
+    const { rowi, rowf, coli, colf } = map.intersection(rect);
+    for (let r = rowi; r <= rowf; ++r) {
+      for (let c = coli; c <= colf; ++c) {
+        if (map.endpoint.c === c && map.endpoint.r === r) {
+          map.load();
+        }
+      }
+    }
+  }
+
   updateState() {
     if (!this.state.grounded) {
       if (this.vy <= 0) {
@@ -485,7 +497,9 @@ class Player {
     this.updateX(updateTime, map);
     this.updateY(updateTime, map);
     this.updateState();
+
     this.boundryCollision(map);
+    this.reachGoal(map);
   }
 
   draw(context, x, y) {
@@ -509,12 +523,22 @@ class Tile {
 }
 
 class Map {
-  init() {
+  constructor() {
+    this.key = 'map-0';
+  }
 
+  load() {
+    let num = parseInt(this.key.split('-').pop());
+    this.key = 'map-'+ (++num);
+    this.read(this.key);
   }
 
   read(key) {
     const map = document.getElementById(key);
+    if (!map) {
+      return;
+    }
+
     const size = this.cell(map);
     this.tiles = new Array(size.r);
     for (let r = 0; r < this.rows(); ++r) {
@@ -552,6 +576,9 @@ class Map {
     this.checkpoint = this.coordinate(
       map.getElementsByTagName('start')[0]
     );
+    this.endpoint = this.cell(
+      map.getElementsByTagName('endpoint')[0]
+    );
   }
 
   coordinate(elem) {
@@ -569,7 +596,7 @@ class Map {
     };
   }
 
-  intersetion(rect) {
+  intersection(rect) {
     return {
       rowi: Math.floor(rect.top() / TILE_SIZE),
       rowf: Math.floor(rect.bottom() / TILE_SIZE),
@@ -579,7 +606,7 @@ class Map {
   }
 
   collidingTiles(rect) {
-    const { rowi, rowf, coli, colf } = this.intersetion(rect);
+    const { rowi, rowf, coli, colf } = this.intersection(rect);
     for (let r = rowi; r <= rowf; ++r) {
       for (let c = coli; c <= colf; ++c) {
         if (this.tiles[r][c].collidable) {
@@ -591,7 +618,7 @@ class Map {
   }
 
   outOfBounds(rect) {
-    const { rowi, rowf, coli, colf } = this.intersetion(rect);
+    const { rowi, rowf, coli, colf } = this.intersection(rect);
     return (
       rowi <= this.lowRowBound() ||
       rowf >= this.highRowBound() ||
@@ -688,7 +715,7 @@ class Game {
 
   initMap() {
     this.map = new Map();
-    this.map.read('map01');
+    this.map.load();
   }
 
   initCamera() {

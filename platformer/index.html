@@ -3,6 +3,12 @@
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <script src="game.js"></script>
+    <style>
+      body {
+        margin: 0px;
+        padding: 0px;
+      }
+    </style>
   </head>
   <body>
     <div id="game-port">
@@ -10,8 +16,9 @@
     </div>
     <div id="maps">
       <xml>
-        <map id="map01" x="100" y="40">
-          <start x="15" y="10"></start>
+        <map id="map-1" x="100" y="40">
+          <start x="15" y="15"></start>
+          <endpoint x="36" y="15"></endpoint>
           <tile x="12" y="12" color="black"></tile>
 
           <tile x="15" y="16" color="black"></tile>
@@ -26,6 +33,17 @@
           <tile x="34" y="16" color="black"></tile>
           <tile x="35" y="16" color="black"></tile>
           <tile x="36" y="16" color="black"></tile>          
+        </map>
+
+        <map id="map-2" x="100" y="40">
+          <start x="15" y="15"></start>
+          <endpoint x="22" y="15"></endpoint>
+          <tile x="12" y="12" color="black"></tile>
+
+          <tile x="15" y="16" color="black"></tile>
+          <tile x="20" y="16" color="black"></tile>
+          <tile x="21" y="16" color="black"></tile>
+          <tile x="22" y="16" color="black"></tile>
         </map>
       </xml>
     </div>
