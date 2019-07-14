@@ -519,7 +519,7 @@ class Player {
 
 class Tile {
   constructor(x, y, w, h, color = null, collidable = false) {
-    this.rect = new Rectangle(x, y, w, h);
+    this.body = new Rectangle(x, y, w, h);
     this.color = color;
     this.collidable = collidable;
   }
@@ -527,7 +527,7 @@ class Tile {
   draw(context, x, y) {
     if (this.color) {
       context.rectStyle = this.color;
-      context.fillRect(x, y, this.rect.w, this.rect.h);
+      context.fillRect(x, y, this.body.w, this.body.h);
     }
   }
 }
@@ -620,7 +620,7 @@ class Map {
     for (let r = rowi; r <= rowf; ++r) {
       for (let c = coli; c <= colf; ++c) {
         if (this.tiles[r][c].collidable) {
-          return this.tiles[r][c].rect;
+          return this.tiles[r][c].body;
         }
       }
     }
@@ -703,9 +703,7 @@ class Camera {
   captureMap(map) {
     for (let row of map.tiles) {
       for (let tile of row) {
-        var x = Math.round(tile.rect.x - this.view.x);
-        var y = Math.round(tile.rect.y - this.view.y);
-        tile.draw(this.context, x, y);
+        this.capture(tile);
       }
     }
   }
