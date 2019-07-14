@@ -191,10 +191,7 @@ class PlayerState {
 
 class Player {
   constructor(media, x, y, w = TILE_SIZE, h = TILE_SIZE) {
-    this.x = x;
-    this.y = y;
-    this.w = w;
-    this.h = h;
+    this.body = new Rectangle(x, y, w, h);
     this.vx = 0;
     this.vy = 0;
     this.ax = 0;
@@ -321,8 +318,8 @@ class Player {
     let rect = null;
     if (delta <= 0) {
       rect = new Rectangle(
-        this.x + this.collisionY.left(),
-        this.y + this.collisionY.top() + delta,
+        this.x() + this.collisionY.left(),
+        this.y() + this.collisionY.top() + delta,
         this.collisionY.width(),
         this.collisionY.height() / 2 - delta
       );
@@ -334,8 +331,8 @@ class Player {
     let rect = null;
     if (delta >= 0) {
       rect = new Rectangle(
-        this.x + this.collisionY.left(),
-        this.y + this.collisionY.top() + this.collisionY.height() / 2,
+        this.x() + this.collisionY.left(),
+        this.y() + this.collisionY.top() + this.collisionY.height() / 2,
         this.collisionY.width(),
         this.collisionY.height() / 2 + delta
       );
@@ -347,8 +344,8 @@ class Player {
     let rect = null;
     if (delta <= 0) {
       rect = new Rectangle(
-        this.x + this.collisionX.left() + delta,
-        this.y + this.collisionX.top(),
+        this.x() + this.collisionX.left() + delta,
+        this.y() + this.collisionX.top(),
         this.collisionX.width() / 2 - delta,
         this.collisionX.height()
       );
@@ -360,8 +357,8 @@ class Player {
     let rect = null;
     if (delta >= 0) {
       rect = new Rectangle(
-        this.x + this.collisionX.left() + this.collisionX.width() / 2,
-        this.y + this.collisionX.top(),
+        this.x() + this.collisionX.left() + this.collisionX.width() / 2,
+        this.y() + this.collisionX.top(),
         this.collisionX.width() / 2 + delta,
         this.collisionX.height()
       );
@@ -370,11 +367,9 @@ class Player {
   }
 
   boundryCollision(map) {
-    // TODO: replace with pre-init'd rect in player 
-    const rect = new Rectangle(this.x, this.y, this.w, this.h);
-    if (map.outOfBounds(rect)) {
-      this.x = map.checkpoint.x;
-      this.y = map.checkpoint.y;
+    if (map.outOfBounds(this.body)) {
+      this.body.x = map.checkpoint.x;
+      this.body.y = map.checkpoint.y;
       this.vx = 0.0;
       this.vy = 0.0;
       this.ax = 0.0;
@@ -385,8 +380,7 @@ class Player {
   }
 
   reachGoal(map) {
-    const rect = new Rectangle(this.x, this.y, this.w, this.h);
-    const { rowi, rowf, coli, colf } = map.intersection(rect);
+    const { rowi, rowf, coli, colf } = map.intersection(this.body);
     for (let r = rowi; r <= rowf; ++r) {
       for (let c = coli; c <= colf; ++c) {
         if (map.endpoint.c === c && map.endpoint.r === r) {
@@ -394,6 +388,22 @@ class Player {
         }
       }
     }
+  }
+
+  x() {
+    return this.body.x;
+  }
+
+  y() {
+    return this.body.y;
+  }
+
+  w() {
+    return this.body.w;
+  }
+
+  h() {
+    return this.body.h;
   }
 
   updateState() {
@@ -414,26 +424,26 @@ class Player {
     if (delta > 0) {
       let tile = map.collidingTiles(this.rightCollision(delta));
       if (tile) {
-        this.x = tile.x - this.collisionX.right();
+        this.body.x = tile.x - this.collisionX.right();
         this.vx = 0.0;
       } else {
-        this.x += delta;
+        this.body.x += delta;
       }
       tile = map.collidingTiles(this.leftCollision(0));
       if (tile) {
-        this.x = tile.x + this.collisionX.right();
+        this.body.x = tile.x + this.collisionX.right();
       }
     } else {
       let tile = map.collidingTiles(this.leftCollision(delta));
       if (tile) {
-        this.x = tile.x + this.collisionX.right();        
+        this.body.x = tile.x + this.collisionX.right();        
         this.vx = 0.0;
       } else {
-        this.x += delta;
+        this.body.x += delta;
       }
       tile = map.collidingTiles(this.rightCollision(0));
       if (tile) {
-        this.x = tile.x - this.collisionX.right();
+        this.body.x = tile.x - this.collisionX.right();
       }
     }
   }
@@ -445,29 +455,29 @@ class Player {
     if (delta > 0) {
       let tile = map.collidingTiles(this.bottomCollision(delta));
       if (tile) {
-        this.y = tile.y - this.collisionY.bottom();
+        this.body.y = tile.y - this.collisionY.bottom();
         this.vy = 0.0;
         this.state.grounded = true;
       } else {
-        this.y += delta;
+        this.body.y += delta;
         this.state.grounded = false;
       }
       tile = map.collidingTiles(this.topCollision(0));
       if (tile) {
-        this.y = tile.y + this.collisionY.height();
+        this.body.y = tile.y + this.collisionY.height();
       }
     } else {
       let tile = map.collidingTiles(this.topCollision(delta));
       if (tile) {
-        this.y = tile.y + this.collisionY.height();
+        this.body.y = tile.y + this.collisionY.height();
         this.vy = 0.0;
       } else {
-        this.y += delta;
+        this.body.y += delta;
         this.state.grounded = false;
       }
       tile = map.collidingTiles(this.bottomCollision(0));
       if (tile) {
-        this.y = tile.y - this.collisionY.bottom();
+        this.body.y = tile.y - this.collisionY.bottom();
         this.state.grounded = true;
       }
     }
@@ -628,8 +638,8 @@ class Map {
   }
 
   resetCheckpoint(player) {
-    player.x = this.checkpoint.x;
-    player.y = this.checkpoint.y;
+    player.body.x = this.checkpoint.x;
+    player.body.y = this.checkpoint.y;
   }
 
   lowRowBound() {
@@ -680,13 +690,13 @@ class Camera {
   }
 
   center(subject) {
-    this.view.x = (subject.x + subject.w / 2) - this.view.w / 2;
-    this.view.y = (subject.y + subject.h / 2) - this.view.h / 2;
+    this.view.x = (subject.body.x + subject.body.w / 2) - this.view.w / 2;
+    this.view.y = (subject.body.y + subject.body.h / 2) - this.view.h / 2;
   }
 
   capture(subject) {
-    let x = Math.round(subject.x - this.view.x);
-    let y = Math.round(subject.y - this.view.y);
+    let x = Math.round(subject.body.x - this.view.x);
+    let y = Math.round(subject.body.y - this.view.y);
     subject.draw(this.context, x, y);
   }
 
